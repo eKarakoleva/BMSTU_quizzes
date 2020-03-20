@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block body_block %}
+<div class="container">
+  <div class="jumbotron">
+    <h1>Welcome to the Quizzes !</h1>
+    {% if user.is_authenticated %}
+        <h2>Hello {{ user.username }}</h2>
+		{% if user.is_authenticated %}
+		<a href="{% url 'teachers:course_list'%}" class="btn btn-primary">My courses</a>
+		{% endif %}
+		
+    {% else %}
+        <h2>Register or Login if you'd like to</h2>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

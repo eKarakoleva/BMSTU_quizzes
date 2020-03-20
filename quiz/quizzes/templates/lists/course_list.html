@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block body_block %}
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item active" aria-current="page">My Courses</li>
+    </ol>
+  </nav>
+  <h2 class="mb-3">My Courses</h2>
+  <a href="{% url 'teachers:course_add' %}" class="btn btn-primary mb-3" role="button">Add Course</a>
+  <div class="card">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Course</th>
+          <th>Cafedra</th>
+          <th>Owner</th>
+          <th>Participants</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for course in courses %}
+          <tr>
+            <td class="align-middle"><a >{{ course.name }}</a></td>
+			<td class="align-middle">{{ course.course_cafedra }}</td>
+			<td class="align-middle">{{ course.owner }}</td>
+            <td class="text-right">
+              <!--<a href="{% url 'teachers:quiz_add' course.pk %}" class="btn btn-primary">View</a>-->
+			  <a href="{% url 'teachers:quiz_list' course.pk %}" class="btn btn-primary">Quizzes</a>
+			  <a href="{% url 'teachers:course_delete' course.pk %}" class="btn btn-danger">Delete</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td class="bg-light text-center font-italic" colspan="5">You haven't created any courses yet.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

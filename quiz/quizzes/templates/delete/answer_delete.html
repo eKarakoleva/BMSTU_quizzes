@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% load crispy_forms_tags %}
+{% block body_block %}
+<form id='person-delete' method="POST" action="{% url 'person_delete' obj.pk %}">
+{% csrf_token %}
+<a href="{% url 'person_delete' obj.pk %}">
+<button  class="btn btn-danger" onClick="deleteFunction()">Delete</button></a>
+</form>
+
+
+{% block javascript %}
+
+<script>
+ function deleteFunction(e) {
+            if(!confirm("Are you sure you want to delete?")){
+                e.preventDefault();
+            }else{
+             $('#person-delete').submit();
+            }            
+        }
+</script>
+{% endblock javascript %}
+{% endblock %}
+

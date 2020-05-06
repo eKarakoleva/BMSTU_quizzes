@@ -7,8 +7,6 @@
       <li class="breadcrumb-item active" aria-current="page">{{course.name}}</li>
     </ol>
   </nav>
-  <h2 class="mb-3">My Quizzes</h2>
-
   <a href="{% url 'teachers:quiz_add' course.id %}" class="btn btn-primary delete mb-3" role="button">Add Quiz</a>
   <div class="card">
     <table class="table mb-0">
@@ -28,7 +26,8 @@
 			<td class="align-middle"><a >{{ quiz.course }}</a></td>
 			<td class="align-middle"><a ></a></td>
             <td class="text-right">
-              <a " class="btn btn-primary">View</a>
+              <a href="{% url 'teachers:questions_list' quiz.id %}" class="btn btn-primary">Questions</a>
+              <a  class="btn btn-danger">Delete</a>
             </td>
           </tr>
         {% empty %}

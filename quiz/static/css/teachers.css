@@ -1,3 +1,6 @@
 body {
   background-color: #b0aac2;
 }
+
+
+.qestion_text { word-wrap: break-word } 

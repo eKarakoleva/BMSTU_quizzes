@@ -37,7 +37,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'widget_tweaks',
     'crispy_forms',
+    'bootstrap_modal_forms',
     'quizzes',
 ]
 
@@ -107,6 +109,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
 
 # Internationalization
 # https://docs.djangoproject.com/en/dev/topics/i18n/

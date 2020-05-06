@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+
+{% block body_block %}
+	<nav aria-label="breadcrumb">
+		<ol class="breadcrumb">
+			<li class="breadcrumb-item"><a href="{% url 'teachers:course_list' %}">My Quiz</a></li>
+			<!-- <li class="breadcrumb-item active" aria-current="page">{{course.name}}</li> -->
+		</ol>
+	</nav>
+	<!--<a href="" class="btn btn-primary delete mb-3" role="button">Add Question</a>-->
+
+		<!-- Modal -->
+		<div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+			<div class="modal-dialog modal-lg">
+					<div class="modal-content">
+
+					</div><!-- /.modal-content -->
+			</div><!-- /.modal-dialog -->
+		</div><!-- /.modal -->
+			<table class="table table-striped table-sm" id="my_answers">
+					<h1>Add answer to question</h1>
+					{% for q in question %}
+						<h3>{{q.name}}</h3>
+				{% endfor %}
+				<br>
+				<div class="container-fluid">
+						<form id="answers-form">
+								<div class="row">
+										{% csrf_token %}
+										{% for field in form %}
+										<div class="form-group col-4">
+												<label class="col-12">{{ field.label }}</label>
+												{{ field }}
+										</div>
+										{% endfor %}
+										<input type="submit" class="btn btn-primary" value="Add Answer" />
+								</div>
+						<form>
+					</div>
+				 		<h1>Answers list</h1>
+						<thead>
+								<tr>
+										<th>Answer</th>
+										<th>Points</th>
+										<th>Correct</th>
+										<th></th>
+
+								</tr>
+						</thead>
+						<tbody>
+						{% for answer in answers %}
+						<tr id="answer-{{answer.id}}">
+								<td>{{answer.name}}</td>
+								<td>{{answer.points}}</td>
+								<td>{{answer.correct}}</td>
+								<td class="text-right">
+											<a class="btn btn-info" id="mod_but" data = {{answer.id}} data-toggle="modal" href="{% url 'teachers:item_edit' answer.id %}" data-target="#modal" title="edit item" data-tooltip>Edit</a> 
+										 <a class="btn btn-danger" onClick="deleteAnswer({{answer.id}})">Delete</a>
+								</td>
+						</tr>       
+						 {% empty %}
+          	<tr>
+            	<td class="bg-light text-center font-italic" colspan="5">You haven't created any answers yet.</td>
+          	</tr>
+						{% endfor %}
+						</tbody>
+				</table>
+		</div>
+	</div>
+</div>
+
+	</div>
+{% block javascript %}
+	<script type="text/javascript">
+
+		$("#mod_but").click(function(){
+			console.log($(this).attr('href'))
+			$("#item_update_form").attr("action",$(this).attr('href'));
+
+		});
+
+		$("#answers-form").submit(function (e) {
+				// preventing from page reload and default actions
+				e.preventDefault();
+				// serialize the data for sending the form data.
+				var serializedData = $(this).serialize();
+				// make POST ajax call
+				$.ajax({
+						type: 'POST',
+						url: "{% url 'teachers:add_answer' question_id %}",
+						data: serializedData,
+						success: function (response) {
+								// on successfull creating object
+								$("#answers-form").trigger('reset');
+								$("#id_nick_name").focus();
+
+								var instance = JSON.parse(response["instance"]);
+								var fields = instance[0]["fields"];
+								$("#my_answers tbody").prepend(
+										`<tr>
+										<td>${fields["name"]||""}</td>
+										<td>${fields["points"]||""}</td>
+										<td>${fields["correct"]||""}</td>
+										<td class="text-right"><a class="btn btn-warning" disabled>Delete</a><td>
+										</tr>`
+								)
+								location.reload();
+						},
+						error: function (response) {
+								// alert the error if any error occured
+								 alert("fail");
+						}
+				})
+		})
+
+function deleteAnswer(id) {
+	var action = confirm("Are you sure you want to delete this answer?");
+	if (action != false) {
+		$.ajax({
+				url: '{% url "teachers:delete_answer" %}',
+				data: {
+						'id': id,
+				},
+				dataType: 'json',
+				success: function (data) {
+						if (data.deleted) {
+							$("#my_answers #answer-" + id).remove();
+						}
+				}
+		});
+	}
+}
+
+</script>
+{% endblock javascript %}
+{% endblock %}

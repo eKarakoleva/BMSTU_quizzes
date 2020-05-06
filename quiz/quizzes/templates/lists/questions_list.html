@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block body_block %}
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'teachers:course_list' %}">My Quiz</a></li>
+      <!-- <li class="breadcrumb-item active" aria-current="page">{{course.name}}</li> -->
+      {% for q in quizzes %}
+      <li class="breadcrumb-item"><a href="">{{q.course}}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{q.name}}</li>
+      {% endfor %}
+    </ol>
+  </nav>
+    <!-- Modal -->
+    <div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+      <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+
+          </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+  <a href="{% url 'teachers:question_add' quiz %}" class="btn btn-primary delete mb-3" role="button">Add Question</a>
+  <div class="card">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Question</th>
+          <th>Type</th>
+          <th>Points</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for question in questions %}
+          <tr>
+            <td class="align-middle"><a >{{ question.name }}</a></td>
+			<td class="align-middle"><p >{{ question.qtype }}</p></td>
+			<td class="align-middle"><a ></a>{{ question.points }}</td>
+            <td class="text-right">
+                <a href="{% url 'teachers:answers_lists_add' question.id %}" class="btn btn-primary">Add Answers</a>
+                <a class="btn btn-info" id="mod_but" data = {{question.id}} data-toggle="modal" href="{% url 'teachers:update_question' question.id %}" data-target="#modal" title="edit item" data-tooltip>Update</a> 
+                <a href="" class="btn btn-danger">Delete</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td class="bg-light text-center font-italic" colspan="5">You haven't created any questions yet.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

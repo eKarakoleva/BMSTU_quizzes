@@ -24,3 +24,10 @@
   background-color: #66598B;
   border-color: #66598B;
 }
+
+.qestion_text { word-wrap: break-word } 
+
+div {
+    display: block;
+    width: 200px; /*based on how much width this div should have*/
+}

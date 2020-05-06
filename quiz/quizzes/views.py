@@ -178,7 +178,7 @@ def update_answer(request, pk, template_name='update/item_edit_form.html'):
     return render(request, template_name, {'form':form, 'id': pk})
 
 
-def update_question(request, pk, template_name='update/item_edit_form.html'):
+def update_question(request, pk, template_name='update/update_question.html'):
     question= get_object_or_404(Questions, pk=pk)
     form = QuestionForm(request.POST or None, instance=question)
     if form.is_valid():

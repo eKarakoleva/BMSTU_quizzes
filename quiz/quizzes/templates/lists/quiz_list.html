@@ -4,7 +4,7 @@
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
       <li class="breadcrumb-item"><a href="{% url 'teachers:course_list' %}">My Courses</a></li>
-      <li class="breadcrumb-item active" aria-current="page">{{course.name}}</li>
+      <li class="breadcrumb-item active" aria-current="page">{{course.name}} {{owner_id}}</li>
     </ol>
   </nav>
   <a href="{% url 'teachers:quiz_add' course.id %}" class="btn btn-primary delete mb-3" role="button">Add Quiz</a>

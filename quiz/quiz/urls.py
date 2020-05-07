@@ -31,7 +31,7 @@ urlpatterns = [
        path('course/<int:pk>/quizzes/', view_course_quizzes, name='quiz_list'),
        path('course/<int:pk>/quiz/add/', quiz_add, name='quiz_add'),
        path('course/delete/<int:pk>/', CourseDeleteView.as_view(template_name='delete/course_delete_confirm.html'), name='course_delete'),
-       path('course/quiz/questions/<int:pk>/', view_quiz_questions, name='questions_list'),
+       path('course/quiz/<int:pk>/questions/', view_quiz_questions, name='questions_list'),
        path('course/quiz/<int:pk>/question/add/', question_add, name='question_add'),
        path('course/quiz/question/<int:qpk>/answers/add/', AnswersView, name='answers_lists_add'),
        path('course/quiz/question/<int:qpk>/answers/add/success', add_answer, name = "add_answer"),
@@ -39,7 +39,6 @@ urlpatterns = [
        path('course/quiz/question/answers/<int:pk>/edit/', update_answer, name = "item_edit"),
 
        path('course/quiz/question/<int:pk>/edit/', update_question, name = "update_question"),
-
 
 
     ], 'quizzes'), namespace='teachers')),

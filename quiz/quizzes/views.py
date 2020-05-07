@@ -8,12 +8,13 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 
-from quizzes.repositories import QuizRepository, CourseRepository
+from quizzes.repositories import QuizRepository, CourseRepository, QuestionRepository, AnswerRepository
 
 
 from django.http import JsonResponse
 from django.core import serializers
 from django.template.loader import render_to_string
+from django.http import Http404
 
 
 class TeacherSignUpView(CreateView):
@@ -91,17 +92,23 @@ def view_course_quizzes(request, pk):
 	quizzes = quiz.get_by_user_course(request.user, pk)
 	courses = CourseRepository(Course)
 	q_course = Course.objects.get(id = pk)
-	#q_course = courses.get_by_id(pk)
-	return render(request, 'lists/quiz_list.html', {'quizzes': quizzes, 'course': q_course})
+	owner_id = courses.get_owner_id(pk)
+	if(request.user.id == owner_id):
+		return render(request, 'lists/quiz_list.html', {'quizzes': quizzes, 'course': q_course})
+	raise Http404
 
 class CourseDeleteView(DeleteView):
 	model = Course
 	template_name = 'delete/course_delete_confirm.html'
 
 	def delete(self, request, *args, **kwargs):
-		course = self.get_object()
-		messages.success(request, 'The course %s was deleted with success!' % course.name)
-		return super().delete(request, *args, **kwargs)
+		courses = CourseRepository(Course)
+		owner_id = courses.get_owner_id(self.kwargs['pk'])
+		if(request.user == owner_id):
+			course = self.get_object()
+			messages.success(request, 'The course %s was deleted with success!' % course.name)
+			return super().delete(request, *args, **kwargs)
+		raise Http404
 
 	def get_success_url(self):
 		return reverse('teachers:course_list')
@@ -109,33 +116,46 @@ class CourseDeleteView(DeleteView):
 
 @login_required
 def view_quiz_questions(request, pk):
-	questions = Questions.objects.filter(quiz_id = pk)
+	questionsR = QuestionRepository(Questions)
+	questions = questionsR.get_by_quiz_id(pk)
 	quiz = QuizRepository(Quiz)
 	quizzes = quiz.get_by_id(pk)
-	return render(request, 'lists/questions_list.html', {'questions': questions, 'quiz': pk, 'quizzes': quizzes})
+	owner_id = quiz.get_owner_id(pk)
+	if request.user.id == owner_id:
+		return render(request, 'lists/questions_list.html', {'questions': questions, 'quiz': pk, 'quizzes': quizzes})
+	raise Http404
 
 
 @login_required
 def question_add(request, pk):
-	if request.method == 'POST':
-		form = QuestionForm(request.POST)
-		if form.is_valid():
-			question = form.save(commit=False)
-			question.quiz_id = pk
-			question.save()
-			messages.success(request, 'You may now add answers/options to the question.')
-			return redirect('/teachers/course/quiz/%d'%pk)
-	else:
-		form = QuestionForm()
+	quiz = QuizRepository(Quiz)
+	owner_id = quiz.get_owner_id(pk)
+	if request.user.id == owner_id:
+		if request.method == 'POST':
+			form = QuestionForm(request.POST)
+			if form.is_valid():
+				question = form.save(commit=False)
+				question.quiz_id = pk
+				question.save()
+				messages.success(request, 'You may now add answers/options to the question.')
+				return redirect('/teachers/course/quiz/%d/questions/'%pk)
+		else:
+			form = QuestionForm()
 
-	return render(request, 'add/question_add.html', {'form': form})
+		return render(request, 'add/question_add.html', {'form': form})
+	raise Http404
 
 
 def AnswersView(request, qpk):
 	form = AnswerForm()
-	answers = Answers.objects.filter(question_id  = qpk).order_by('-points').reverse()
-	question = Questions.objects.filter(id = qpk)
-	return render(request, "lists/answers_list.html", {"form": form, "answers": answers, "question_id": qpk, "question": question})
+	answersR = AnswerRepository(Answers)
+	answers = answersR.get_by_id_ordered(qpk)
+	questions = QuestionRepository(Questions)
+	question = questions.get_by_id(qpk)
+	owner_id = questions.get_owner_id(qpk)
+	if request.user.id == owner_id:
+		return render(request, "lists/answers_list.html", {"form": form, "answers": answers, "question_id": qpk, "question": question})
+	raise Http404
 
 def add_answer(request, qpk):
 	# request should be ajax and method should be POST.
@@ -162,7 +182,8 @@ def add_answer(request, qpk):
 class DeleteAnswer(DeleteView):
 	def  get(self, request):
 		id1 = request.GET.get('id', None)
-		Answers.objects.get(id=id1).delete()
+		answersR = AnswerRepository(Answers)
+		answersR.answer_delete(id1)
 		data = {
 			'deleted': True
 		}
@@ -170,20 +191,29 @@ class DeleteAnswer(DeleteView):
 
 
 def update_answer(request, pk, template_name='update/item_edit_form.html'):
-    book= get_object_or_404(Answers, pk=pk)
-    form = AnswerForm(request.POST or None, instance=book)
-    if form.is_valid():
-        form.save()
-        return HttpResponse(render_to_string('update/item_edit_form_success.html'))
-    return render(request, template_name, {'form':form, 'id': pk})
+	answer= get_object_or_404(Answers, pk=pk)
+	answersR = AnswerRepository(Answers)
+	owner_id = answersR.get_owner_id(pk)
+	if request.user.id == owner_id:
+		form = AnswerForm(request.POST or None, instance=answer)
+		if form.is_valid():
+			form.save()
+			return HttpResponse(render_to_string('update/item_edit_form_success.html'))
+		return render(request, template_name, {'form':form, 'id': pk, 'owner_id': owner_id})
+	raise Http404
 
 
 def update_question(request, pk, template_name='update/update_question.html'):
-    question= get_object_or_404(Questions, pk=pk)
-    form = QuestionForm(request.POST or None, instance=question)
-    if form.is_valid():
-        form.save()
-        return HttpResponse(render_to_string('update/item_edit_form_success.html'))
-    return render(request, template_name, {'form':form, 'id': pk})
+	question= get_object_or_404(Questions, pk=pk)
+	questions = QuestionRepository(Questions)
+	owner_id = questions.get_owner_id(pk)
+	if request.user.id == owner_id:
+		form = QuestionForm(request.POST or None, instance=question)
+		#raise Exception({owner_id})
+		if form.is_valid():
+			form.save()
+			return HttpResponse(render_to_string('update/item_edit_form_success.html'))
+		return render(request, template_name, {'form':form, 'id': pk})
+	raise Http404
 
 

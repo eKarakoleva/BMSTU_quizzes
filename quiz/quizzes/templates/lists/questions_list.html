@@ -39,7 +39,7 @@
             <td class="text-right">
                 <a href="{% url 'teachers:answers_lists_add' question.id %}" class="btn btn-primary">Add Answers</a>
                 <a class="btn btn-info" id="mod_but" data = {{question.id}} data-toggle="modal" href="{% url 'teachers:update_question' question.id %}" data-target="#modal" title="edit item" data-tooltip>Update</a> 
-                <a href="" class="btn btn-danger">Delete</a>
+                 <a class="btn btn-danger" onClick="deleteQuestion({{question.id}})">Delete</a>
             </td>
           </tr>
         {% empty %}
@@ -50,4 +50,25 @@
       </tbody>
     </table>
   </div>
+
+
+  {% block javascript %}
+  <script type="text/javascript">
+    function deleteQuestion(id) {
+      var action = confirm("Are you sure you want to delete this question?");
+      if (action != false) {
+        $.ajax({
+            url: '{% url "teachers:delete_question" %}',
+            data: {
+                'id': id,
+            },
+            dataType: 'json',
+            success: function (data) {
+              location.reload()
+            }
+        });
+      }
+    }
+</script>
+{% endblock javascript %}
 {% endblock %}

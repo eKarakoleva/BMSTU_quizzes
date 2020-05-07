@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.db import transaction
 from django.forms.utils import ValidationError
 
-from quizzes.models import (User, Cafedra, Quiz, Questions, QuestionType, Answers)
+from quizzes.models import (User, Cafedra, Course, Quiz, Questions, QuestionType, Answers)
 
 class TeacherSignUpForm(UserCreationForm):
 	class Meta(UserCreationForm.Meta):
@@ -18,6 +18,23 @@ class TeacherSignUpForm(UserCreationForm):
 			user.save()
 		return user
 
+class CourseForm(forms.ModelForm):
+	class Meta:
+		model = Course
+		fields = ('name', 'description', 'course_cafedra')
+
+		widgets = {
+			'description': forms.Textarea(attrs={'rows':4, 'cols':15}),
+			'name': forms.Textarea(attrs={'rows':4, 'cols':15}),
+		}
+	def __init__(self, *args, **kwargs):
+		super(CourseForm, self).__init__(*args, **kwargs)
+
+		for name in self.fields.keys():
+			self.fields[name].widget.attrs.update({
+				'class': 'form-control',
+			})
+
 class QuizForm(forms.ModelForm):
 	class Meta:
 		model = Quiz
@@ -27,6 +44,14 @@ class QuizForm(forms.ModelForm):
 			'description': forms.Textarea(attrs={'rows':4, 'cols':15}),
 			'name': forms.Textarea(attrs={'rows':4, 'cols':15}),
 		}
+
+	def __init__(self, *args, **kwargs):
+		super(QuizForm, self).__init__(*args, **kwargs)
+
+		for name in self.fields.keys():
+			self.fields[name].widget.attrs.update({
+				'class': 'form-control',
+			})
 
 class QuestionForm(forms.ModelForm):
 	def __init__(self, *args, **kwargs):

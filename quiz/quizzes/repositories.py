@@ -16,6 +16,9 @@ class QuizRepository(object):
 	def get_owner_id(self, q_id):
 		return self.model.objects.only('owner_id').get(id=q_id).owner_id
 
+	def quiz_delete(self, quizpk):
+		return self.model.objects.get(id=quizpk).delete()
+
 class CourseRepository(object):
 	def __init__(self, model):
 		self.model = model
@@ -28,6 +31,9 @@ class CourseRepository(object):
 
 	def get_owner_id(self, c_id):
 		return self.model.objects.only('owner_id').get(id=c_id).owner_id
+
+	def course_delete(self, cpk):
+		return self.model.objects.get(id=cpk).delete()
 
 
 class QuestionRepository(object):
@@ -42,6 +48,11 @@ class QuestionRepository(object):
 
 	def get_owner_id(self, question_id):
 		return self.model.objects.filter(id=question_id).select_related('quiz').values('quiz__owner_id')[0]['quiz__owner_id']
+
+	def question_delete(self, qpk):
+		return self.model.objects.get(id=qpk).delete()
+
+
 
 class AnswerRepository(object):
 	def __init__(self, model):

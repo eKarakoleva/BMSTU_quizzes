@@ -26,7 +26,7 @@ class Course(models.Model):
 class Quiz(models.Model):
 	name = models.TextField()
 	owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name='quiz_owner', unique=False)
-	description = models.CharField(max_length=200)
+	description = models.TextField(blank=True)
 	course = models.ForeignKey(Course, on_delete=models.CASCADE,  related_name='quiz_course', unique=False)
 	max_points = models.IntegerField(default=100)
 	min_points = models.IntegerField(default=50)
@@ -44,7 +44,7 @@ class QuestionType(models.Model):
 class Questions(models.Model):
 	name = models.TextField()
 	quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='quiz_id', unique=False)
-	description = models.TextField()
+	description = models.TextField(blank=True)
 	points = models.IntegerField(default=0)
 	qtype = models.ForeignKey(QuestionType, on_delete=models.CASCADE)
 

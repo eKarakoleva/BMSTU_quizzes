@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import (CreateView, DeleteView, DetailView, ListView,UpdateView)
-from quizzes.forms import TeacherSignUpForm, QuizForm, QuestionForm, AnswerForm
+from quizzes.forms import TeacherSignUpForm, QuizForm, QuestionForm, AnswerForm, CourseForm
 from quizzes.models import Cafedra, Course, User, Quiz, Questions, Answers
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages 
@@ -57,6 +57,42 @@ class CourseCreateView(CreateView):
 		messages.success(self.request, 'The course was created with success! Go ahead and add some quizzes now.')
 		return redirect('/teachers/')
 
+#@method_decorator([login_required], name='dispatch')
+@login_required
+def view_course_quizzes(request, pk):
+	quiz = QuizRepository(Quiz)
+	quizzes = quiz.get_by_user_course(request.user, pk)
+	courses = CourseRepository(Course)
+	q_course = Course.objects.get(id = pk)
+	owner_id = courses.get_owner_id(pk)
+	if(request.user.id == owner_id):
+		return render(request, 'lists/quiz_list.html', {'quizzes': quizzes, 'course': q_course})
+	raise Http404
+
+class CourseDelete(DeleteView):
+	def  get(self, request):
+		courseR = CourseRepository(Course)
+		cou_id = request.GET.get('id', None)
+		owner_id = courseR.get_owner_id(cou_id)
+		if request.user.id == owner_id:
+			courseR.course_delete(cou_id)
+			data = {
+				'deleted': True
+			}
+			return JsonResponse(data)
+
+def update_course(request, pk, template_name='update/update_course.html'):
+	course= get_object_or_404(Course, pk=pk)
+	courses = CourseRepository(Course)
+	owner_id = courses.get_owner_id(pk)
+	if request.user.id == owner_id:
+		form = CourseForm(request.POST or None, instance=course)
+		if form.is_valid():
+			form.save()
+			return HttpResponse(render_to_string('update/item_edit_form_success.html'))
+		return render(request, template_name, {'form':form, 'id': pk})
+	raise Http404
+
 @method_decorator([login_required], name='dispatch')
 class QuizListView(ListView,):
 	model = Course
@@ -85,34 +121,6 @@ def quiz_add(request, pk):
 
 	return render(request, 'add/quiz_add.html', {'course': course, 'form': form})
 
-#@method_decorator([login_required], name='dispatch')
-@login_required
-def view_course_quizzes(request, pk):
-	quiz = QuizRepository(Quiz)
-	quizzes = quiz.get_by_user_course(request.user, pk)
-	courses = CourseRepository(Course)
-	q_course = Course.objects.get(id = pk)
-	owner_id = courses.get_owner_id(pk)
-	if(request.user.id == owner_id):
-		return render(request, 'lists/quiz_list.html', {'quizzes': quizzes, 'course': q_course})
-	raise Http404
-
-class CourseDeleteView(DeleteView):
-	model = Course
-	template_name = 'delete/course_delete_confirm.html'
-
-	def delete(self, request, *args, **kwargs):
-		courses = CourseRepository(Course)
-		owner_id = courses.get_owner_id(self.kwargs['pk'])
-		if(request.user == owner_id):
-			course = self.get_object()
-			messages.success(request, 'The course %s was deleted with success!' % course.name)
-			return super().delete(request, *args, **kwargs)
-		raise Http404
-
-	def get_success_url(self):
-		return reverse('teachers:course_list')
-
 
 @login_required
 def view_quiz_questions(request, pk):
@@ -125,6 +133,29 @@ def view_quiz_questions(request, pk):
 		return render(request, 'lists/questions_list.html', {'questions': questions, 'quiz': pk, 'quizzes': quizzes})
 	raise Http404
 
+class QuizDelete(DeleteView):
+	def  get(self, request):
+		quizR = QuizRepository(Quiz)
+		quiz_id = request.GET.get('id', None)
+		owner_id = quizR.get_owner_id(quiz_id)
+		if request.user.id == owner_id:
+			quizR.quiz_delete(quiz_id)
+			data = {
+				'deleted': True
+			}
+			return JsonResponse(data)
+
+def update_quiz(request, pk, template_name='update/update_quiz.html'):
+	quiz= get_object_or_404(Quiz, pk=pk)
+	quizzes = QuizRepository(Quiz)
+	owner_id = quizzes.get_owner_id(pk)
+	if request.user.id == owner_id:
+		form = QuizForm(request.POST or None, instance=quiz)
+		if form.is_valid():
+			form.save()
+			return HttpResponse(render_to_string('update/item_edit_form_success.html'))
+		return render(request, template_name, {'form':form, 'id': pk})
+	raise Http404
 
 @login_required
 def question_add(request, pk):
@@ -145,6 +176,29 @@ def question_add(request, pk):
 		return render(request, 'add/question_add.html', {'form': form})
 	raise Http404
 
+def update_question(request, pk, template_name='update/update_question.html'):
+	question= get_object_or_404(Questions, pk=pk)
+	questions = QuestionRepository(Questions)
+	owner_id = questions.get_owner_id(pk)
+	if request.user.id == owner_id:
+		form = QuestionForm(request.POST or None, instance=question)
+		if form.is_valid():
+			form.save()
+			return HttpResponse(render_to_string('update/item_edit_form_success.html'))
+		return render(request, template_name, {'form':form, 'id': pk})
+	raise Http404
+
+class QuestionDelete(DeleteView):
+	def  get(self, request):
+		questionR = QuestionRepository(Questions)
+		que_id = request.GET.get('id', None)
+		owner_id = questionR.get_owner_id(que_id)
+		if request.user.id == owner_id:
+			questionR.question_delete(que_id)
+			data = {
+				'deleted': True
+			}
+			return JsonResponse(data)
 
 def AnswersView(request, qpk):
 	form = AnswerForm()
@@ -181,14 +235,15 @@ def add_answer(request, qpk):
 
 class DeleteAnswer(DeleteView):
 	def  get(self, request):
-		id1 = request.GET.get('id', None)
 		answersR = AnswerRepository(Answers)
-		answersR.answer_delete(id1)
-		data = {
-			'deleted': True
-		}
-		return JsonResponse(data)
-
+		ans_id = request.GET.get('id', None)
+		owner_id = answersR.get_owner_id(ans_id)
+		if request.user.id == owner_id:
+			answersR.answer_delete(ans_id)
+			data = {
+				'deleted': True
+			}
+			return JsonResponse(data)
 
 def update_answer(request, pk, template_name='update/item_edit_form.html'):
 	answer= get_object_or_404(Answers, pk=pk)
@@ -200,20 +255,6 @@ def update_answer(request, pk, template_name='update/item_edit_form.html'):
 			form.save()
 			return HttpResponse(render_to_string('update/item_edit_form_success.html'))
 		return render(request, template_name, {'form':form, 'id': pk, 'owner_id': owner_id})
-	raise Http404
-
-
-def update_question(request, pk, template_name='update/update_question.html'):
-	question= get_object_or_404(Questions, pk=pk)
-	questions = QuestionRepository(Questions)
-	owner_id = questions.get_owner_id(pk)
-	if request.user.id == owner_id:
-		form = QuestionForm(request.POST or None, instance=question)
-		#raise Exception({owner_id})
-		if form.is_valid():
-			form.save()
-			return HttpResponse(render_to_string('update/item_edit_form_success.html'))
-		return render(request, template_name, {'form':form, 'id': pk})
 	raise Http404
 
 

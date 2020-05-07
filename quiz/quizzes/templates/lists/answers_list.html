@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 
-
 {% block body_block %}
 	<nav aria-label="breadcrumb">
 		<ol class="breadcrumb">
@@ -55,14 +54,14 @@
 								<td>{{answer.points}}</td>
 								<td>{{answer.correct}}</td>
 								<td class="text-right">
-											<a class="btn btn-info" id="mod_but" data = {{answer.id}} data-toggle="modal" href="{% url 'teachers:item_edit' answer.id %}" data-target="#modal" title="edit item" data-tooltip>Edit</a> 
-										 <a class="btn btn-danger" onClick="deleteAnswer({{answer.id}})">Delete</a>
+									<a class="btn btn-info" id="mod_but" data = {{answer.id}} data-toggle="modal" href="{% url 'teachers:item_edit' answer.id %}" data-target="#modal" title="edit item" data-tooltip>Edit</a> 
+									<a class="btn btn-danger" onClick="deleteAnswer({{answer.id}})">Delete</a>
 								</td>
 						</tr>       
 						 {% empty %}
-          	<tr>
-            	<td class="bg-light text-center font-italic" colspan="5">You haven't created any answers yet.</td>
-          	</tr>
+			          	<tr>
+			            	<td class="bg-light text-center font-italic" colspan="5">You haven't created any answers yet.</td>
+			          	</tr>
 						{% endfor %}
 						</tbody>
 				</table>
@@ -114,23 +113,23 @@
 				})
 		})
 
-function deleteAnswer(id) {
-	var action = confirm("Are you sure you want to delete this answer?");
-	if (action != false) {
-		$.ajax({
-				url: '{% url "teachers:delete_answer" %}',
-				data: {
-						'id': id,
-				},
-				dataType: 'json',
-				success: function (data) {
-						if (data.deleted) {
-							$("#my_answers #answer-" + id).remove();
+		function deleteAnswer(id) {
+			var action = confirm("Are you sure you want to delete this answer?");
+			if (action != false) {
+				$.ajax({
+						url: '{% url "teachers:delete_answer" %}',
+						data: {
+								'id': id,
+						},
+						dataType: 'json',
+						success: function (data) {
+								if (data.deleted) {
+									$("#my_answers #answer-" + id).remove();
+								}
 						}
-				}
-		});
-	}
-}
+				});
+			}
+		}
 
 </script>
 {% endblock javascript %}

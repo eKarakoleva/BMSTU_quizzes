@@ -42,9 +42,7 @@ urlpatterns = [
        path('course/quiz/question/<int:qpk>/answers/add/success', add_answer, name = "add_answer"),
        path('course/quiz/question/answers/delete',  DeleteAnswer.as_view(), name='delete_answer'),
        path('course/quiz/question/answers/<int:pk>/edit/', update_answer, name = "item_edit"),
-       
-
-
+      
     ], 'quizzes'), namespace='teachers')),
 ]
 

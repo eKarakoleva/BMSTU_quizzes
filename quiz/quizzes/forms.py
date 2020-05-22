@@ -21,7 +21,7 @@ class TeacherSignUpForm(UserCreationForm):
 class CourseForm(forms.ModelForm):
 	class Meta:
 		model = Course
-		fields = ('name', 'description', 'course_cafedra')
+		fields = ('name', 'description', 'course_cafedra', 'points', 'is_active')
 
 		widgets = {
 			'description': forms.Textarea(attrs={'rows':4, 'cols':15}),
@@ -38,7 +38,7 @@ class CourseForm(forms.ModelForm):
 class QuizForm(forms.ModelForm):
 	class Meta:
 		model = Quiz
-		fields = ('name', 'description', 'max_points', 'min_points')
+		fields = ('name', 'description', 'max_points', 'min_points', 'is_active')
 
 		widgets = {
 			'description': forms.Textarea(attrs={'rows':4, 'cols':15}),
@@ -71,6 +71,13 @@ class QuestionForm(forms.ModelForm):
 		}
 
 class AnswerForm(forms.ModelForm):
+	class Meta:
+		model = Answers
+		fields = ('name', 'points', 'correct')
+
+		widgets = {
+			'name': forms.Textarea(attrs={'rows':4, 'cols':15}),
+		}
 
 	def __init__(self, *args, **kwargs):
 		super(AnswerForm, self).__init__(*args, **kwargs)
@@ -79,10 +86,5 @@ class AnswerForm(forms.ModelForm):
 			self.fields[name].widget.attrs.update({
 				'class': 'form-control',
 			})
-	class Meta:
-		model = Answers
-		fields = ('name', 'points', 'correct')
+		self.fields['points'].queryset = Answers.objects.filter(id=76)
 
-		widgets = {
-			'name': forms.Textarea(attrs={'rows':4, 'cols':15}),
-		}

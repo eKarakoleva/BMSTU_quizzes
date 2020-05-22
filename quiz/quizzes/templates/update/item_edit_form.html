@@ -23,6 +23,7 @@
                     {% endfor %}
               </div>
               <div class="modal-footer">
+                <h4 style="text-align:center;">Points avaliable {{free_points}} <br/> Points for the question {{question_points}}</h4>
                 <input type="button" id="annulla" class="btn btn-default" data-dismiss="modal" value="Cancel" />
                 <input type="submit" class="btn btn-primary" value="Save" style="margin-bottom: 5px;" />
               </div>
@@ -36,7 +37,7 @@
                 }
                 $('#item_update_form').ajaxForm(form_options);
                 $("#annulla").click(function(){
-                    location.reload();
+                
                 });
 
         </script>

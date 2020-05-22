@@ -6,16 +6,15 @@ from django.urls import reverse_lazy, reverse
 from django.contrib import messages 
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse, Http404
 
 from quizzes.repositories import QuizRepository, CourseRepository, QuestionRepository, AnswerRepository
-
-
-from django.http import JsonResponse
 from django.core import serializers
 from django.template.loader import render_to_string
-from django.http import Http404
 
+from django.db import connection
+from django.contrib import messages
+from django import forms
 
 class TeacherSignUpView(CreateView):
 	model = User
@@ -47,7 +46,7 @@ class CourseListView(ListView,):
 @method_decorator([login_required], name='dispatch')
 class CourseCreateView(CreateView):
 	model = Course
-	fields = ('name', 'description', 'course_cafedra')
+	fields = ('name', 'description', 'course_cafedra', 'points', 'is_active')
 	template_name = 'add/course_add.html'
 
 	def form_valid(self, form):
@@ -88,7 +87,15 @@ def update_course(request, pk, template_name='update/update_course.html'):
 	if request.user.id == owner_id:
 		form = CourseForm(request.POST or None, instance=course)
 		if form.is_valid():
-			form.save()
+			points = form.cleaned_data["points"]
+			quiz = QuizRepository(Quiz)
+			all_quiz_points = quiz.get_all_quiz_points(pk)
+			if(all_quiz_points <= points):
+				form.save()
+				messages.success(request, 'Course is updated')
+			else:
+				messages.error(request, 'Course is not updated. Quizzes in the course have more points than new course points', extra_tags='alert')
+
 			return HttpResponse(render_to_string('update/item_edit_form_success.html'))
 		return render(request, template_name, {'form':form, 'id': pk})
 	raise Http404
@@ -107,19 +114,28 @@ class QuizListView(ListView,):
 @login_required
 def quiz_add(request, pk):
 	course = get_object_or_404(Course, pk=pk, owner_id=request.user)
+	courses = CourseRepository(Course)
+	c_points = courses.get_points(pk)
+	quizzes = QuizRepository(Quiz)
+	all_q_points = quizzes.get_all_quiz_points(pk)
+	free_points = c_points - all_q_points
 	if request.method == 'POST':
 		form = QuizForm(request.POST)
 		if form.is_valid():
 			quiz = form.save(commit=False)
 			quiz.course = course
 			quiz.owner = request.user
-			quiz.save()
-			messages.success(request, 'You may now add question/options to the quiz.')
-			return redirect('/teachers/course/%d/quizzes'%pk)
+			if(form.cleaned_data["max_points"] <= free_points):
+				quiz.save()
+				messages.success(request, 'You may now add question/options to the quiz.')
+				return redirect('/teachers/course/%d/quizzes'%pk)
+			else:
+				messages.error(request, 'You put more points than you have left. Available points: %d'%free_points, extra_tags='alert')
+			
 	else:
 		form = QuizForm()
 
-	return render(request, 'add/quiz_add.html', {'course': course, 'form': form})
+	return render(request, 'add/quiz_add.html', {'course': course, 'form': form, 'free_points':free_points })
 
 
 @login_required
@@ -128,7 +144,7 @@ def view_quiz_questions(request, pk):
 	questions = questionsR.get_by_quiz_id(pk)
 	quiz = QuizRepository(Quiz)
 	quizzes = quiz.get_by_id(pk)
-	owner_id = quiz.get_owner_id(pk)
+	owner_id = quizzes[0].owner_id
 	if request.user.id == owner_id:
 		return render(request, 'lists/questions_list.html', {'questions': questions, 'quiz': pk, 'quizzes': quizzes})
 	raise Http404
@@ -149,44 +165,91 @@ def update_quiz(request, pk, template_name='update/update_quiz.html'):
 	quiz= get_object_or_404(Quiz, pk=pk)
 	quizzes = QuizRepository(Quiz)
 	owner_id = quizzes.get_owner_id(pk)
+
 	if request.user.id == owner_id:
+
+		course_id = quizzes.get_course_id(pk)
+		all_q_points = quizzes.get_all_quiz_points(course_id)
+		cur_quiz_points = quizzes.get_quiz_points(pk)
+		c_points = quizzes.get_course_points(pk)
+		free_points = c_points - all_q_points + cur_quiz_points
+		questions = QuestionRepository(Questions)
+		sum_question_points = questions.sum_all_quiz_questions_points(pk)
+
 		form = QuizForm(request.POST or None, instance=quiz)
 		if form.is_valid():
-			form.save()
+			quiz = form.save(commit=False)
+			form_points_data = form.cleaned_data["max_points"]
+			if form_points_data > free_points:
+				quiz.max_points = cur_quiz_points
+				messages.error(request, 'Available course points: %d. '%free_points, extra_tags='alert')
+			if sum_question_points > form_points_data:
+				quiz.max_points = cur_quiz_points
+				messages.error(request, 'Question points in this quiz are: %d. '%sum_question_points, extra_tags='alert')
+			quiz.save()
 			return HttpResponse(render_to_string('update/item_edit_form_success.html'))
-		return render(request, template_name, {'form':form, 'id': pk})
+		return render(request, template_name, {'form':form, 'id': pk, 'free_points': free_points, 'sum_questions_points': sum_question_points})
 	raise Http404
 
 @login_required
 def question_add(request, pk):
 	quiz = QuizRepository(Quiz)
+	question = QuestionRepository(Questions)
+	quiz_points = quiz.get_quiz_points(pk)
 	owner_id = quiz.get_owner_id(pk)
+
+	sum_questions_points = question.sum_all_quiz_questions_points(pk)
+
+	free_points = quiz_points - sum_questions_points
 	if request.user.id == owner_id:
 		if request.method == 'POST':
 			form = QuestionForm(request.POST)
 			if form.is_valid():
 				question = form.save(commit=False)
 				question.quiz_id = pk
-				question.save()
-				messages.success(request, 'You may now add answers/options to the question.')
-				return redirect('/teachers/course/quiz/%d/questions/'%pk)
+				if free_points >= form.cleaned_data["points"]:
+					question.save()
+					messages.success(request, 'You may now add answers/options to the question.')
+					return redirect('/teachers/course/quiz/%d/questions/'%pk)
+				else:
+					messages.error(request, 'You put more points than you have left. Available points: %d'%free_points, extra_tags='alert')
 		else:
 			form = QuestionForm()
 
-		return render(request, 'add/question_add.html', {'form': form})
+		return render(request, 'add/question_add.html', {'form': form, 'free_points': free_points})
 	raise Http404
+
 
 def update_question(request, pk, template_name='update/update_question.html'):
 	question= get_object_or_404(Questions, pk=pk)
 	questions = QuestionRepository(Questions)
 	owner_id = questions.get_owner_id(pk)
+
 	if request.user.id == owner_id:
+
+		answers = AnswerRepository(Answers)
+		sum_answers_points = answers.sum_all_question_answers_points(pk)
+		quiz_id = questions.get_quiz_id(pk)
+		sum_quiz_questions = questions.sum_all_quiz_questions_points(quiz_id)
+		quiz_points = questions.get_quiz_points(pk)
+		cur_question_points = questions.get_question_points(pk)
+		aval_points = quiz_points - sum_quiz_questions + cur_question_points
+
 		form = QuestionForm(request.POST or None, instance=question)
 		if form.is_valid():
-			form.save()
+			question = form.save(commit=False)
+			form_points_data = form.cleaned_data["points"]
+			if (form_points_data > aval_points):
+				question.points = cur_question_points
+				messages.error(request, 'Available course points: %d. '%aval_points)
+			if (form_points_data < sum_answers_points):
+				question.points = cur_question_points
+				messages.error(request, 'Answer points in this question are: %d. '%sum_answers_points)
+			question.save()
 			return HttpResponse(render_to_string('update/item_edit_form_success.html'))
-		return render(request, template_name, {'form':form, 'id': pk})
+		return render(request, template_name, {'form':form, 'id': pk, 'aval_points': aval_points, 'sum_answers': sum_answers_points})
 	raise Http404
+
 
 class QuestionDelete(DeleteView):
 	def  get(self, request):
@@ -200,6 +263,7 @@ class QuestionDelete(DeleteView):
 			}
 			return JsonResponse(data)
 
+
 def AnswersView(request, qpk):
 	form = AnswerForm()
 	answersR = AnswerRepository(Answers)
@@ -207,9 +271,11 @@ def AnswersView(request, qpk):
 	questions = QuestionRepository(Questions)
 	question = questions.get_by_id(qpk)
 	owner_id = questions.get_owner_id(qpk)
-	if request.user.id == owner_id:
+	qtype = question[0].qtype
+	if request.user.id == owner_id and qtype != 'open':
 		return render(request, "lists/answers_list.html", {"form": form, "answers": answers, "question_id": qpk, "question": question})
 	raise Http404
+
 
 def add_answer(request, qpk):
 	# request should be ajax and method should be POST.
@@ -219,8 +285,21 @@ def add_answer(request, qpk):
 		# save the data and after fetch the object in instance
 		if form.is_valid():
 			instance = form.save(commit=False)
+			answers = AnswerRepository(Answers)
+			sum_answers_points = answers.sum_all_question_answers_points(qpk)
+			questions = QuestionRepository(Questions)
+			question_points = questions.get_question_points(qpk)
+			form_points_data = form.cleaned_data["points"]
+			free_points = question_points - sum_answers_points
+
 			instance.question_id = qpk
-			instance.save()
+			if form_points_data <= free_points:
+				instance.save()
+				messages.success(request, 'Success!')
+			else:
+				instance.points = 0
+				instance.save()
+				messages.error(request, 'You put more points than you have left. Available points: %d'%free_points)
 			# serialize in new friend object in json
 			ser_instance = serializers.serialize('json', [ instance, ])
 			# send to client side.
@@ -237,7 +316,10 @@ class DeleteAnswer(DeleteView):
 	def  get(self, request):
 		answersR = AnswerRepository(Answers)
 		ans_id = request.GET.get('id', None)
-		owner_id = answersR.get_owner_id(ans_id)
+		quiz_id = answersR.get_quiz_id(ans_id)
+		quiz = QuizRepository(Quiz)
+		owner_id = quiz.get_owner_id(quiz_id)
+
 		if request.user.id == owner_id:
 			answersR.answer_delete(ans_id)
 			data = {
@@ -245,16 +327,33 @@ class DeleteAnswer(DeleteView):
 			}
 			return JsonResponse(data)
 
+
 def update_answer(request, pk, template_name='update/item_edit_form.html'):
 	answer= get_object_or_404(Answers, pk=pk)
 	answersR = AnswerRepository(Answers)
-	owner_id = answersR.get_owner_id(pk)
+	quiz_id = answersR.get_quiz_id(pk)
+	quiz = QuizRepository(Quiz)
+	owner_id = quiz.get_owner_id(quiz_id)
+
 	if request.user.id == owner_id:
 		form = AnswerForm(request.POST or None, instance=answer)
+
+		question_id = answersR.get_question_id(pk)
+		sum_answers_points = answersR.sum_all_question_answers_points(question_id)
+		question_points = answersR.get_question_points(question_id)
+		answer_points = answersR.get_answer_points(pk)
+		free_points = question_points - sum_answers_points + answer_points
 		if form.is_valid():
-			form.save()
+			instance = form.save(commit=False)
+			form_points_data = form.cleaned_data["points"]
+			
+			if form_points_data <= free_points:
+				messages.success(request, 'Success!')
+			else:
+				
+				instance.points = answer_points
+				messages.error(request, 'You put more points than you have left. Available points: %d'%free_points)
+			instance.save()
 			return HttpResponse(render_to_string('update/item_edit_form_success.html'))
-		return render(request, template_name, {'form':form, 'id': pk, 'owner_id': owner_id})
+		return render(request, template_name, {'form':form, 'id': pk, 'free_points': free_points, 'question_points': question_points})
 	raise Http404
-
-

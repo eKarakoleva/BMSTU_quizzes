@@ -20,10 +20,11 @@
 			<table class="table table-striped table-sm" id="my_answers">
 					<h1>Add answer to question</h1>
 					{% for q in question %}
+						<h3 id="question_points" name = "{{q.points}}">Question points: {{q.points}}</h3>
 						<h3>{{q.name}}</h3>
 				{% endfor %}
 				<br>
-				<div class="container-fluid">
+				<div class="container-fluid add_form">
 						<form id="answers-form">
 								<div class="row">
 										{% csrf_token %}
@@ -36,6 +37,10 @@
 										<input type="submit" class="btn btn-primary" value="Add Answer" />
 								</div>
 						<form>
+					</div>
+					<div id="full">
+						<h1>This question is full</h1>
+						<br>
 					</div>
 				 		<h1>Answers list</h1>
 						<thead>
@@ -50,19 +55,27 @@
 						<tbody>
 						{% for answer in answers %}
 						<tr id="answer-{{answer.id}}">
-								<td>{{answer.name}}</td>
-								<td>{{answer.points}}</td>
+								<td class = "cut-text" title="{{answer.name}}">{{answer.name}}</td>
+								<td name = "{{answer.points}}"  class = "add">{{answer.points}}</td>
 								<td>{{answer.correct}}</td>
 								<td class="text-right">
 									<a class="btn btn-info" id="mod_but" data = {{answer.id}} data-toggle="modal" href="{% url 'teachers:item_edit' answer.id %}" data-target="#modal" title="edit item" data-tooltip>Edit</a> 
 									<a class="btn btn-danger" onClick="deleteAnswer({{answer.id}})">Delete</a>
 								</td>
-						</tr>       
+						</tr>   
 						 {% empty %}
 			          	<tr>
 			            	<td class="bg-light text-center font-italic" colspan="5">You haven't created any answers yet.</td>
 			          	</tr>
 						{% endfor %}
+								<tr>
+								<td class = "cut-text"><strong>TOTAL</strong></td>
+								<td><strong class="total"></strong></td>
+								<td></td>
+								<td class="text-right">
+									
+								</td>
+						</tr>      
 						</tbody>
 				</table>
 		</div>
@@ -79,6 +92,15 @@
 
 		});
 
+		function total_points() {
+     		var sum = 0;
+			$('.add').each(function(){
+				sum += parseFloat($(this).text()); 				   
+			});
+			$(".total").html(sum);
+		}
+
+		total_points();
 		$("#answers-form").submit(function (e) {
 				// preventing from page reload and default actions
 				e.preventDefault();
@@ -105,10 +127,6 @@
 										</tr>`
 								)
 								location.reload();
-						},
-						error: function (response) {
-								// alert the error if any error occured
-								 alert("fail");
 						}
 				})
 		})
@@ -125,11 +143,27 @@
 						success: function (data) {
 								if (data.deleted) {
 									$("#my_answers #answer-" + id).remove();
+									total_points();
+									hide_show_form();
 								}
 						}
 				});
 			}
 		}
+	function hide_show_form() {
+		sum_answers = parseFloat($(".total").text());
+		question_points = parseFloat($("#question_points").attr("name"));
+		if (question_points - sum_answers == 0){
+			$(".add_form").hide();
+			$("#full").show();
+		}
+		else{
+			$(".add_form").show();
+			$("#full").hide();
+		}
+	}
+	hide_show_form();
+
 
 </script>
 {% endblock javascript %}

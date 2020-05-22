@@ -25,9 +25,13 @@
   border-color: #66598B;
 }
 
-.qestion_text { word-wrap: break-word } 
-
-div {
-    display: block;
-    width: 200px; /*based on how much width this div should have*/
+.cut-text{
+  display: block;
+  white-space: nowrap;
+  width: 12em;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+
+

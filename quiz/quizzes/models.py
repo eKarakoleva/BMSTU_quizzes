@@ -14,10 +14,13 @@ class User(AbstractUser):
 
 
 class Course(models.Model):
-	name = models.CharField(max_length=100)
-	owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name='course_owner')
+	name = models.TextField()
+	owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_owner', unique=False)
 	description = models.CharField(max_length=200)
 	course_cafedra = models.ForeignKey(Cafedra, on_delete=models.CASCADE)
+	is_active = models.BooleanField(default=False)
+	points = models.IntegerField(default=200)
+
 
 	def __str__(self):
 		return self.name
@@ -25,11 +28,12 @@ class Course(models.Model):
 
 class Quiz(models.Model):
 	name = models.TextField()
-	owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name='quiz_owner', unique=False)
+	owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quiz_owner', unique=False)
 	description = models.TextField(blank=True)
 	course = models.ForeignKey(Course, on_delete=models.CASCADE,  related_name='quiz_course', unique=False)
 	max_points = models.IntegerField(default=100)
 	min_points = models.IntegerField(default=50)
+	done = models.BooleanField(default=False)
 	is_active = models.BooleanField(default=False)
 
 	def __str__(self):
@@ -46,8 +50,15 @@ class Questions(models.Model):
 	quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='quiz_id', unique=False)
 	description = models.TextField(blank=True)
 	points = models.IntegerField(default=0)
-	qtype = models.ForeignKey(QuestionType, on_delete=models.CASCADE)
+	QUESTION_TYPES = [
+		('multiple', 'multiple'),
+		('single', 'single'),
+		('compare', 'compare'),
+		('open', 'open'),
+	]
 
+	qtype = models.CharField(max_length=10, choices=QUESTION_TYPES, default='single',)
+	done = models.BooleanField(default=False)
 	def __str__(self):
 		return self.name
 

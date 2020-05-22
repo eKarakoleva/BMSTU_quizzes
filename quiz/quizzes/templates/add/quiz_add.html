@@ -12,9 +12,11 @@
   </nav>
   <h2 class="mb-3">Add a new quiz to the course {{ course.name }}</h2>
   <p class="lead">Add additional quiz info</p>
+  
   <form method="post" novalidate>
     {% csrf_token %}
     {{ form|crispy }}
+    <p class="lead">Points avaliable for this quiz: {{free_points}}</p>
     <button type="submit" class="btn btn-success">Save</button>
    <a  href="{% url 'teachers:course_list' %}" class="btn btn-outline-secondary" role="button">Nevermind</a>
   </form>

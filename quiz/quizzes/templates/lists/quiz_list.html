@@ -17,26 +17,31 @@
   </div><!-- /.modal -->
   <a href="{% url 'teachers:quiz_add' course.id %}" class="btn btn-primary delete mb-3" role="button">Add Quiz</a>
   <div class="card">
-    <table class="table mb-0">
+    <table class="table mb-0" id="my_quizzes">
       <thead>
         <tr>
           <th>Quiz</th>
           <th>Course</th>
-          <th>Owner</th>
-          <th>Participants</th>
+          <th>Active</th>
+          <th>Points</th>
           <th></th>
         </tr>
       </thead>
       <tbody>
         {% for quiz in quizzes %}
-          <tr>
-            <td class="align-middle"><a >{{ quiz.name }}</a></td>
-			<td class="align-middle"><a >{{ quiz.course }}</a></td>
-			<td class="align-middle"><a ></a></td>
+          <tr id="quiz-{{quiz.id}}">
+             <style>.cut-text { text-overflow: ellipsis-word; }</style>
+            <td class="align-middle"><a class = "cut-text" href = "#" title="{{ quiz.name }}" >{{ quiz.name }}</a></td>
+      			<td class="align-middle"><a >{{ quiz.course }}</a></td>
+      			<td class="align-middle">{{course.is_active}}</td>
+            <td class="align-middle add">{{quiz.max_points}}</td>
             <td class="text-right">
               <a href="{% url 'teachers:questions_list' quiz.id %}" class="btn btn-primary">Questions</a>
-              <a class="btn btn-info" id="mod_but" data = {{quiz.id}} data-toggle="modal" href="{% url 'teachers:update_quiz' quiz.id %}" data-target="#modal" title="edit item" data-tooltip>Update</a> 
+              {% if course.is_active == False and quiz.is_active == False%}
+              <a class="btn btn-info" id="mod_but" data = {{quiz.id}} data-toggle="modal" href="{% url 'teachers:update_quiz' quiz.id %}" 
+              data-target="#modal" title="edit item" data-tooltip>Update</a> 
               <a class="btn btn-danger" onClick="deleteQuiz({{quiz.id}})">Delete</a>
+              {% endif %}
             </td>
           </tr>
         {% empty %}
@@ -44,11 +49,28 @@
             <td class="bg-light text-center font-italic" colspan="5">You haven't created any quizzes yet.</td>
           </tr>
         {% endfor %}
+          <tr>
+            <td class="align-middle"><strong>TOTAL</strong></td>
+            <td class="align-middle"></td>
+            <td class="align-middle"></td>
+            <td class="align-middle"><strong class="total"></strong></td>
+            <td class="text-right"></td>
+          </tr>
       </tbody>
     </table>
   </div>
   {% block javascript %}
   <script type="text/javascript">
+
+    function total_points() {
+        var sum = 0;
+      $('.add').each(function(){
+        sum += parseFloat($(this).text());           
+      });
+      $(".total").html(sum);
+    }
+    total_points();
+
     function deleteQuiz(id) {
       var action = confirm("Are you sure you want to delete this quiz?");
       if (action != false) {
@@ -59,7 +81,8 @@
             },
             dataType: 'json',
             success: function (data) {
-              location.reload()
+              $("#my_quizzes #quiz-" + id).remove();
+              total_points();
             }
         });
       }

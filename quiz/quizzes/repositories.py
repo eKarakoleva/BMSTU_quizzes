@@ -34,6 +34,13 @@ class QuizRepository(object):
 	def get_course_points(self, quiz_id):
 		return self.model.objects.filter(id=quiz_id).select_related('course').values('course__points')[0]['course__points']
 
+	def update_is_active(self, quiz_id, status):
+		return self.model.objects.filter(id=quiz_id).update(is_active=status)
+
+	def is_active(self, quizpk):
+		return self.model.objects.only('is_active').get(id=quizpk).is_active
+
+
 
 class CourseRepository(object):
 	def __init__(self, model):
@@ -65,8 +72,12 @@ class QuestionRepository(object):
 	def get_by_quiz_id(self, quiz_id):
 			return self.model.objects.filter(quiz_id = quiz_id).order_by('-id').reverse()
 
+
 	def get_owner_id(self, question_id):
 		return self.model.objects.filter(id=question_id).select_related('quiz').values('quiz__owner_id')[0]['quiz__owner_id']
+
+	def get_quiz_status(self, question_id):
+		return self.model.objects.filter(id=question_id).select_related('quiz').values('quiz__is_active')[0]['quiz__is_active']
 
 	def question_delete(self, qpk):
 		return self.model.objects.get(id=qpk).delete()
@@ -94,6 +105,16 @@ class QuestionRepository(object):
 
 	def get_done_status(self, question_id):
 		return self.model.objects.only('done').get(id=question_id).done
+
+	def is_quiz_done(self, quiz_id):
+		dones = self.model.objects.filter(quiz_id=quiz_id, done = False).values('done').distinct()
+		if dones.exists():
+			dones = False
+		else:
+			dones = True
+		return dones
+
+
 
 
 class AnswerRepository(object):

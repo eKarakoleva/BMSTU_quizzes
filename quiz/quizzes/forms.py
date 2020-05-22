@@ -21,7 +21,7 @@ class TeacherSignUpForm(UserCreationForm):
 class CourseForm(forms.ModelForm):
 	class Meta:
 		model = Course
-		fields = ('name', 'description', 'course_cafedra', 'points', 'is_active')
+		fields = ('name', 'description', 'course_cafedra', 'points')
 
 		widgets = {
 			'description': forms.Textarea(attrs={'rows':4, 'cols':15}),
@@ -38,7 +38,7 @@ class CourseForm(forms.ModelForm):
 class QuizForm(forms.ModelForm):
 	class Meta:
 		model = Quiz
-		fields = ('name', 'description', 'max_points', 'min_points', 'is_active')
+		fields = ('name', 'description', 'max_points', 'min_points')
 
 		widgets = {
 			'description': forms.Textarea(attrs={'rows':4, 'cols':15}),

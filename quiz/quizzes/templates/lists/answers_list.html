@@ -57,10 +57,17 @@
 						<tr id="answer-{{answer.id}}">
 								<td class = "cut-text" title="{{answer.name}}">{{answer.name}}</td>
 								<td name = "{{answer.points}}"  class = "add">{{answer.points}}</td>
-								<td>{{answer.correct}}</td>
+								{% if answer.correct %}
+								<td><span class="label label-success">{{answer.correct}}</span></td>
+								{% else %}
+								<td><span class="label label-danger">{{answer.correct}}</span></td>
+								{% endif %}
+
 								<td class="text-right">
+									{% if not quiz_is_active %}
 									<a class="btn btn-info" id="mod_but" data = {{answer.id}} data-toggle="modal" href="{% url 'teachers:item_edit' answer.id %}" data-target="#modal" title="edit item" data-tooltip>Edit</a> 
 									<a class="btn btn-danger" onClick="deleteAnswer({{answer.id}})">Delete</a>
+									{% endif %}
 								</td>
 						</tr>   
 						 {% empty %}

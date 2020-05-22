@@ -33,7 +33,12 @@
              <style>.cut-text { text-overflow: ellipsis-word; }</style>
             <td class="align-middle"><a class = "cut-text" href = "#" title="{{ quiz.name }}" >{{ quiz.name }}</a></td>
       			<td class="align-middle"><a >{{ quiz.course }}</a></td>
-      			<td class="align-middle">{{course.is_active}}</td>
+            {% if quiz.is_active == True %}
+            <td class="align-middle"><input class = "toggle-event" type="checkbox" id="is_active-{{quiz.id}}" name = "{{quiz.id}}" data-toggle="toggle" data-on="Ready" data-off="Not Ready" data-onstyle="success" data-offstyle="danger" onClick="ActivateQuiz({{quiz.id}})" checked></td>
+            {% else %}
+             <td class="align-middle"><input class = "toggle-event" type="checkbox" id="is_active-{{quiz.id}}" name = "{{quiz.id}}" data-toggle="toggle" data-on="Ready" data-off="Not Ready" data-onstyle="success" data-offstyle="danger" onClick="ActivateQuiz({{quiz.id}})"></td>
+
+            {% endif%}
             <td class="align-middle add">{{quiz.max_points}}</td>
             <td class="text-right">
               <a href="{% url 'teachers:questions_list' quiz.id %}" class="btn btn-primary">Questions</a>
@@ -83,6 +88,64 @@
             success: function (data) {
               $("#my_quizzes #quiz-" + id).remove();
               total_points();
+            }
+        });
+      }
+    }
+
+    $(function() {
+      $('.toggle-event').change(function() {
+        id = $(this).attr('name')
+        id = parseInt(id, 10)
+        console.log(id)
+        var action = confirm("Are you sure you want to activate/unactivate this quiz?");
+        if (action != false) {
+          var status = false
+          if ($(this).prop('checked')) {
+            status = "True"
+          }
+          else
+          {
+            status = "False"
+          }
+
+          $.ajax({
+              url: '{% url "teachers:quiz_activate" %}',
+              data: {
+                  'id': id,
+                  'is_active': status
+              },
+              dataType: 'json',
+              success: function (data) {
+                location.reload()
+              }
+          });
+        }
+
+      })
+    })
+
+    function ActivateQuiz(id) {
+      console.log('aaa')
+      var action = confirm("Are you sure you want to activate/unactivate this quiz?");
+      if (action != false) {
+        var status = false
+        if (document.getElementById("is_active-" + id).checked == true) {
+          status = "True"
+        }
+        else
+        {
+          status = "False"
+        }
+        $.ajax({
+            url: '{% url "teachers:quiz_activate" %}',
+            data: {
+                'id': id,
+                'is_active': status
+            },
+            dataType: 'json',
+            success: function (data) {
+              location.reload()
             }
         });
       }

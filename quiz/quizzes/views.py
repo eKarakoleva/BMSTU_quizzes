@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import (CreateView, DeleteView, DetailView, ListView,UpdateView)
-from quizzes.forms import TeacherSignUpForm, QuizForm, QuestionForm, AnswerForm, CourseForm
+from quizzes.forms import TeacherSignUpForm, QuizForm, QuestionForm, AnswerForm, CourseForm, QuizActivateForm
 from quizzes.models import Cafedra, Course, User, Quiz, Questions, Answers
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages 
@@ -15,6 +15,8 @@ from django.template.loader import render_to_string
 from django.db import connection
 from django.contrib import messages
 from django import forms
+
+from quizzes.helper import check_grades, generate_code
 
 class TeacherSignUpView(CreateView):
 	model = User
@@ -101,6 +103,15 @@ def update_course(request, pk, template_name='update/update_course.html'):
 		return render(request, template_name, {'form':form, 'id': pk})
 	raise Http404
 
+def view_course_info(request, pk, template_name='info/course_info.html'):
+	course= get_object_or_404(Course, pk=pk)
+	coursesR = CourseRepository(Course)
+	owner_id = coursesR.get_owner_id(pk)
+	courses = coursesR.get_by_id(pk)
+	if request.user.id == owner_id:
+		return render(request, template_name, {'id': pk, 'courses': courses})
+	raise Http404
+
 class ActivateCourse(UpdateView):
 	def  get(self, request):
 		courses = CourseRepository(Course)
@@ -108,7 +119,7 @@ class ActivateCourse(UpdateView):
 		status = request.GET.get('is_active', None)
 		owner_id = courses.get_owner_id(course_id)
 		if request.user.id == owner_id:
-			courses.update_is_active(course_id, status)
+			courses.update_is_active_and_in_code(course_id, status, generate_code())
 			data = {
 				'activated': True
 			}
@@ -154,9 +165,9 @@ def quiz_add(request, pk):
 
 class QuizDelete(DeleteView):
 	def  get(self, request):
-		quizR = QuizRepository(Quiz)
-		is_active = quizR.is_active(pk)
+		quizR = QuizRepository(Quiz)		
 		quiz_id = request.GET.get('id', None)
+		is_active = quizR.is_active(quiz_id)
 		owner_id = quizR.get_owner_id(quiz_id)
 		if request.user.id == owner_id and not is_active:
 			quizR.quiz_delete(quiz_id)
@@ -195,30 +206,62 @@ def update_quiz(request, pk, template_name='update/update_quiz.html'):
 		return render(request, template_name, {'form':form, 'id': pk, 'free_points': free_points, 'sum_questions_points': sum_question_points})
 	raise Http404
 
-class ActivateQuiz(UpdateView):
+def view_quiz_info(request, pk, template_name='info/quiz_info.html'):
+	quiz= get_object_or_404(Quiz, pk=pk)
+	quizzesR = QuizRepository(Quiz)
+	owner_id = quizzesR.get_owner_id(pk)
+	quizzes = quizzesR.get_by_id(pk)
+	if request.user.id == owner_id:
+		return render(request, template_name, {'id': pk, 'quizzes': quizzes})
+	raise Http404
+
+class DeactivateQuiz(UpdateView):
 	def  get(self, request):
 		quizR = QuizRepository(Quiz)
 		questionR = QuestionRepository(Questions)
 		quiz_id = request.GET.get('id', None)
-		status = request.GET.get('is_active', None)
 		owner_id = quizR.get_owner_id(quiz_id)
 		if request.user.id == owner_id:
-			is_quiz_done = questionR.is_quiz_done(quiz_id)
-			sum_questions_points = questionR.sum_all_quiz_questions_points(quiz_id)
-			quiz_points = quizR.get_quiz_points(quiz_id)
+			quizR.update_is_active(quiz_id, False)
+			messages.success(request, 'Success!')
 
-			if(sum_questions_points == quiz_points):
-				if is_quiz_done:
-					quizR.update_is_active(quiz_id, status)
-					messages.success(request, 'Success!')
-				else:
-					messages.error(request, 'You have question that dont have enough answers')
-			else:
-				messages.error(request, 'Sum of quiz queston is not equal quiz points')
 			data = {
 				'activated': True
 			}
 			return JsonResponse(data)
+
+def activate_quiz(request, pk, template_name='activate/activate_quiz.html'):
+	quiz= get_object_or_404(Quiz, pk=pk)
+	quizR = QuizRepository(Quiz)
+	questionR = QuestionRepository(Questions)
+	owner_id = quizR.get_owner_id(pk)
+	if request.user.id == owner_id:
+		is_quiz_done = questionR.is_quiz_done(pk)
+		sum_questions_points = questionR.sum_all_quiz_questions_points(pk)
+		quiz_points = quizR.get_quiz_points(pk)
+		is_active = quizR.is_active(pk)
+		form = QuizActivateForm(request.POST or None, instance=quiz)
+		if form.is_valid():
+			quiz = form.save(commit=False)
+			check = check_grades(form.cleaned_data["max_points"], form.cleaned_data["verygood_points"], form.cleaned_data["good_points"], form.cleaned_data["min_points"])
+			if check:
+				if(sum_questions_points == quiz_points):
+					if is_quiz_done:
+						quiz.in_code = generate_code()
+						quiz.save()
+						quizR.update_is_active(pk, not is_active)
+						messages.success(request, 'Success!')
+						
+					else:
+						messages.error(request, 'You have question that dont have enough answers')
+				else:
+					messages.error(request, 'Sum of quiz queston is not equal quiz points')
+				
+			else:
+				messages.error(request, 'Put points in the right order')
+			return HttpResponse(render_to_string('update/item_edit_form_success.html'))
+		return render(request, template_name, {'form':form, 'id': pk})
+	raise Http404
 
 @login_required
 def view_quiz_questions(request, pk):
@@ -230,6 +273,15 @@ def view_quiz_questions(request, pk):
 	owner_id = quizzes[0].owner_id
 	if request.user.id == owner_id:
 		return render(request, 'lists/questions_list.html', {'questions': questions, 'quiz': pk, 'quizzes': quizzes, 'quiz_is_active': quizzes[0].is_active, 'course_id': course_id})
+	raise Http404
+
+def view_question_info(request, pk, template_name='info/question_info.html'):
+	question= get_object_or_404(Questions, pk=pk)
+	questionR = QuestionRepository(Questions)
+	owner_id = questionR.get_owner_id(pk)
+	questions = questionR.get_by_id(pk)
+	if request.user.id == owner_id:
+		return render(request, template_name, {'id': pk, 'questions': questions})
 	raise Http404
 
 @login_required
@@ -291,7 +343,7 @@ def update_question(request, pk, template_name='update/update_question.html'):
 				messages.error(request, 'Answer points in this question are: %d. '%sum_answers_points)
 			question.save()
 			is_done = questions.get_done_status(pk)
-			if form_points_data > sum_answers_points:
+			if form_points_data > sum_answers_points and aval_points > form_points_data:
 				if is_done == True:
 					questions.update_is_done(pk, False)
 			else:

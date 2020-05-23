@@ -49,8 +49,8 @@ class CourseRepository(object):
 	def get_by_user__cafedra_owner(self, user_id):
 		return self.model.objects.filter(owner_id = user_id).select_related('course_cafedra').select_related('owner')
 
-	def get_by_id(self, quiz_id):
-		 self.model.objects.get(id = quiz_id).order_by('-id').reverse()
+	def get_by_id(self, course_id):
+		 return self.model.objects.filter(id = course_id)
 
 	def get_owner_id(self, c_id):
 		return self.model.objects.only('owner_id').get(id=c_id).owner_id
@@ -63,6 +63,9 @@ class CourseRepository(object):
 
 	def update_is_active(self, course_id, status):
 		return self.model.objects.filter(id=course_id).update(is_active=status)
+
+	def update_is_active_and_in_code(self, course_id, status, code):
+		return self.model.objects.filter(id=course_id).update(is_active=status, in_code=code)
 
 
 class QuestionRepository(object):

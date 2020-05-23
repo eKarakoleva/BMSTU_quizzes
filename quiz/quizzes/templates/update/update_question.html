@@ -37,8 +37,10 @@
                 }
                 $('#item_update_form').ajaxForm(form_options);
                 $("#annulla").click(function(){
-                    
+                    $('body').on('hidden.bs.modal', '.modal', function () {
+                        $(this).removeData('bs.modal');
+                    });
                 });
-
+                  
         </script>
 

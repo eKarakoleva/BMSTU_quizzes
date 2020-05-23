@@ -1,0 +1,51 @@
+      <form id="quuestion_view_form" method='post' class="form" role="form" >
+              <div class="modal-header">
+                <h4 class="modal-title" id="myModalLabel">Info</h4>
+              </div>
+              {% for quiz in quizzes%}
+              <div class="modal-body">
+                   <div class="form-group">
+                    <label>Quiz</label>
+                    <textarea class="form-control" rows="3" readonly>{{quiz.name}}</textarea>
+                  </div>
+                  <div class="form-group">
+                    <label>Description</label>
+                    <textarea class="form-control" rows="3" readonly>{{quiz.description}}</textarea>
+                  </div>
+                  <div class="form-group">
+                    <label>Course</label>
+                    <input class="form-control" value="{{quiz.course}}" readonly>
+                  </div>
+                  <div class="form-group">
+                    <label>Points</label>
+                    <input class="form-control" value="{{quiz.max_points}}" readonly>
+                  </div>
+                 <div class="form-group">
+                    <label>In code</label>
+                    <input class="form-control" value="{{quiz.in_code}}" readonly>
+                  </div>
+                  {% empty %}
+              <tr>
+                <td class="bg-light text-center font-italic" colspan="5">Something went wrong</td>
+              </tr>
+              {% endfor %}
+              <div class="modal-footer">
+                  
+                <input type="button" id="annulla" class="btn btn-default" data-dismiss="modal" value="Cancel" />
+              </div>
+              </div>
+        </form>
+        <script>
+
+                var form_options = {
+                    target: '#modal',
+                    success: function() {  }
+                }
+                $('#item_update_form').ajaxForm(form_options);
+                $("#annulla").click(function(){
+                    $('body').on('hidden.bs.modal', '.modal', function () {
+                        $(this).removeData('bs.modal');
+                    });
+                });
+
+        </script>

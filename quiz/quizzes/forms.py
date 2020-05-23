@@ -38,7 +38,7 @@ class CourseForm(forms.ModelForm):
 class QuizForm(forms.ModelForm):
 	class Meta:
 		model = Quiz
-		fields = ('name', 'description', 'max_points', 'min_points')
+		fields = ('name', 'description', 'max_points')
 
 		widgets = {
 			'description': forms.Textarea(attrs={'rows':4, 'cols':15}),
@@ -47,6 +47,19 @@ class QuizForm(forms.ModelForm):
 
 	def __init__(self, *args, **kwargs):
 		super(QuizForm, self).__init__(*args, **kwargs)
+
+		for name in self.fields.keys():
+			self.fields[name].widget.attrs.update({
+				'class': 'form-control',
+			})
+
+class QuizActivateForm(forms.ModelForm):
+	class Meta:
+		model = Quiz
+		fields = ('max_points', 'verygood_points', 'good_points', 'min_points')
+
+	def __init__(self, *args, **kwargs):
+		super(QuizActivateForm, self).__init__(*args, **kwargs)
 
 		for name in self.fields.keys():
 			self.fields[name].widget.attrs.update({

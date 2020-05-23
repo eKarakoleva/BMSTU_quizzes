@@ -20,7 +20,7 @@ class Course(models.Model):
 	course_cafedra = models.ForeignKey(Cafedra, on_delete=models.CASCADE)
 	is_active = models.BooleanField(default=False)
 	points = models.IntegerField(default=200)
-
+	in_code = models.CharField(max_length=6, blank=True)
 
 	def __str__(self):
 		return self.name
@@ -32,9 +32,13 @@ class Quiz(models.Model):
 	description = models.TextField(blank=True)
 	course = models.ForeignKey(Course, on_delete=models.CASCADE,  related_name='quiz_course', unique=False)
 	max_points = models.IntegerField(default=100)
-	min_points = models.IntegerField(default=50)
+	verygood_points = models.IntegerField(default=0)
+	good_points = models.IntegerField(default=0)
+	min_points = models.IntegerField(default=0)
 	done = models.BooleanField(default=False)
 	is_active = models.BooleanField(default=False)
+	in_code = models.CharField(max_length=6, blank=True)
+
 
 	def __str__(self):
 		return self.name

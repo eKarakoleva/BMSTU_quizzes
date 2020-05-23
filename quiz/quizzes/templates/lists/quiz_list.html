@@ -16,6 +16,24 @@
         </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
   </div><!-- /.modal -->
+
+        <!-- Modal -->
+    <div class="modal fade" id="modal-view" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+      <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+
+          </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+            <!-- Modal -->
+    <div class="modal fade" id="modal-activate" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+      <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+
+          </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
   <a href="{% url 'teachers:course_list' %}" class="btn btn-info">
     <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
      Go back
@@ -38,12 +56,12 @@
         {% for quiz in quizzes %}
           <tr id="quiz-{{quiz.id}}">
              <style>.cut-text { text-overflow: ellipsis-word; }</style>
-            <td class="align-middle"><a class = "cut-text" href = "#" title="{{ quiz.name }}" >{{ quiz.name }}</a></td>
-      			<td class="align-middle"><a >{{ quiz.course }}</a></td>
+            <td class="align-middle"><a id="mod_but" data = {{quiz.id}} data-toggle="modal" href = "{% url 'teachers:view_quiz' quiz.id %}" data-target="#modal-view" class = "cut-text" title="{{ quiz.name }}">{{ quiz.name }}</a></td>
+      			<td class="align-middle">{{ quiz.course }}</td>
             {% if quiz.is_active == True %}
-            <td class="align-middle"><input class = "toggle-event" type="checkbox" id="is_active-{{quiz.id}}" name = "{{quiz.id}}" data-toggle="toggle" data-on="Ready" data-off="Not Ready" data-onstyle="success" data-offstyle="danger" onClick="ActivateQuiz({{quiz.id}})" checked></td>
+             <td class="align-middle"><a class="btn btn-success" onClick="deactivateQuiz({{quiz.id}})">Deactivate</a></td>
             {% else %}
-             <td class="align-middle"><input class = "toggle-event" type="checkbox" id="is_active-{{quiz.id}}" name = "{{quiz.id}}" data-toggle="toggle" data-on="Ready" data-off="Not Ready" data-onstyle="success" data-offstyle="danger" onClick="ActivateQuiz({{quiz.id}})"></td>
+             <td class="align-middle"><a class="btn btn-danger" id="is_active-{{quiz.id}}" name = "{{quiz.id}}" data-toggle="modal" href="{% url 'teachers:activate_quiz' quiz.id %}" data-target="#modal-activate" title="edit item" data-tooltip>Activate</a></td>
 
             {% endif%}
             <td class="align-middle add">{{quiz.max_points}}</td>
@@ -51,7 +69,7 @@
               <a href="{% url 'teachers:questions_list' quiz.id %}" class="btn btn-primary">Questions</a>
               {% if quiz.is_active == False and quiz.is_active == False%}
               <a class="btn btn-info" id="mod_but" data = {{quiz.id}} data-toggle="modal" href="{% url 'teachers:update_quiz' quiz.id %}" 
-              data-target="#modal" title="edit item" data-tooltip>Update</a> 
+              data-target="#modal" title="edit item" data-tooltip >Update</a> 
               <a class="btn btn-danger" onClick="deleteQuiz({{quiz.id}})">Delete</a>
               {% endif %}
             </td>
@@ -100,66 +118,24 @@
       }
     }
 
-    $(function() {
-      $('.toggle-event').change(function() {
-        id = $(this).attr('name')
-        id = parseInt(id, 10)
-        var action = confirm("Are you sure you want to activate/unactivate this quiz?");
-        if (action != false) {
-          var status = false
-          if ($(this).prop('checked')) {
-            status = "True"
-          }
-          else
-          {
-            status = "False"
-          }
-
+    function deactivateQuiz(id) {
+      var action = confirm("Are you sure you want to deactivate this quiz?");
+      if (action != false) {
+        console.log('aa')
           $.ajax({
-              url: '{% url "teachers:quiz_activate" %}',
+              url: '{% url "teachers:deactivate_quiz" %}',
               data: {
                   'id': id,
-                  'is_active': status
               },
               dataType: 'json',
               success: function (data) {
                 location.reload()
               }
           });
-        }
-        else
-        {
-           location.reload()
-        }
-
-      })
-    })
-
-    function ActivateQuiz(id) {
-      console.log('aaa')
-      var action = confirm("Are you sure you want to activate/unactivate this quiz?");
-      if (action != false) {
-        var status = false
-        if (document.getElementById("is_active-" + id).checked == true) {
-          status = "True"
-        }
-        else
-        {
-          status = "False"
-        }
-        $.ajax({
-            url: '{% url "teachers:quiz_activate" %}',
-            data: {
-                'id': id,
-                'is_active': status
-            },
-            dataType: 'json',
-            success: function (data) {
-              location.reload()
-            }
-        });
       }
     }
+
+
 </script>
 {% endblock javascript %}
 {% endblock %}

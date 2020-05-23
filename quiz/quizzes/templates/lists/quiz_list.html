@@ -7,6 +7,7 @@
       <li class="breadcrumb-item active" aria-current="page">{{course.name}} </li>
     </ol>
   </nav>
+
   <!-- Modal -->
   <div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
     <div class="modal-dialog modal-lg">
@@ -15,6 +16,12 @@
         </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
   </div><!-- /.modal -->
+  <a href="{% url 'teachers:course_list' %}" class="btn btn-info">
+    <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+     Go back
+  </a>
+   <br>
+   <br>
   <a href="{% url 'teachers:quiz_add' course.id %}" class="btn btn-primary delete mb-3" role="button">Add Quiz</a>
   <div class="card">
     <table class="table mb-0" id="my_quizzes">
@@ -42,7 +49,7 @@
             <td class="align-middle add">{{quiz.max_points}}</td>
             <td class="text-right">
               <a href="{% url 'teachers:questions_list' quiz.id %}" class="btn btn-primary">Questions</a>
-              {% if course.is_active == False and quiz.is_active == False%}
+              {% if quiz.is_active == False and quiz.is_active == False%}
               <a class="btn btn-info" id="mod_but" data = {{quiz.id}} data-toggle="modal" href="{% url 'teachers:update_quiz' quiz.id %}" 
               data-target="#modal" title="edit item" data-tooltip>Update</a> 
               <a class="btn btn-danger" onClick="deleteQuiz({{quiz.id}})">Delete</a>
@@ -97,7 +104,6 @@
       $('.toggle-event').change(function() {
         id = $(this).attr('name')
         id = parseInt(id, 10)
-        console.log(id)
         var action = confirm("Are you sure you want to activate/unactivate this quiz?");
         if (action != false) {
           var status = false
@@ -120,6 +126,10 @@
                 location.reload()
               }
           });
+        }
+        else
+        {
+           location.reload()
         }
 
       })

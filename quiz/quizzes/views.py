@@ -101,6 +101,19 @@ def update_course(request, pk, template_name='update/update_course.html'):
 		return render(request, template_name, {'form':form, 'id': pk})
 	raise Http404
 
+class ActivateCourse(UpdateView):
+	def  get(self, request):
+		courses = CourseRepository(Course)
+		course_id = request.GET.get('id', None)
+		status = request.GET.get('is_active', None)
+		owner_id = courses.get_owner_id(course_id)
+		if request.user.id == owner_id:
+			courses.update_is_active(course_id, status)
+			data = {
+				'activated': True
+			}
+			return JsonResponse(data)
+
 @method_decorator([login_required], name='dispatch')
 class QuizListView(ListView,):
 	model = Course
@@ -138,17 +151,6 @@ def quiz_add(request, pk):
 
 	return render(request, 'add/quiz_add.html', {'course': course, 'form': form, 'free_points':free_points })
 
-
-@login_required
-def view_quiz_questions(request, pk):
-	questionsR = QuestionRepository(Questions)
-	questions = questionsR.get_by_quiz_id(pk)
-	quiz = QuizRepository(Quiz)
-	quizzes = quiz.get_by_id(pk)
-	owner_id = quizzes[0].owner_id
-	if request.user.id == owner_id:
-		return render(request, 'lists/questions_list.html', {'questions': questions, 'quiz': pk, 'quizzes': quizzes, 'quiz_is_active': quizzes[0].is_active})
-	raise Http404
 
 class QuizDelete(DeleteView):
 	def  get(self, request):
@@ -214,9 +216,21 @@ class ActivateQuiz(UpdateView):
 			else:
 				messages.error(request, 'Sum of quiz queston is not equal quiz points')
 			data = {
-				'deleted': True
+				'activated': True
 			}
 			return JsonResponse(data)
+
+@login_required
+def view_quiz_questions(request, pk):
+	questionsR = QuestionRepository(Questions)
+	questions = questionsR.get_by_quiz_id(pk)
+	quiz = QuizRepository(Quiz)
+	quizzes = quiz.get_by_id(pk)
+	course_id = quiz.get_course_id(pk)
+	owner_id = quizzes[0].owner_id
+	if request.user.id == owner_id:
+		return render(request, 'lists/questions_list.html', {'questions': questions, 'quiz': pk, 'quizzes': quizzes, 'quiz_is_active': quizzes[0].is_active, 'course_id': course_id})
+	raise Http404
 
 @login_required
 def question_add(request, pk):
@@ -310,10 +324,11 @@ def AnswersView(request, qpk):
 	question = questions.get_by_id(qpk)
 	owner_id = questions.get_owner_id(qpk)
 	quiz_is_active = questions.get_quiz_status(qpk)
+	quiz_id = questions.get_quiz_id(qpk)
 
 	qtype = question[0].qtype
 	if request.user.id == owner_id and qtype != 'open':
-		return render(request, "lists/answers_list.html", {"form": form, "answers": answers, "question_id": qpk, "question": question, 'quiz_is_active': quiz_is_active})
+		return render(request, "lists/answers_list.html", {"form": form, "answers": answers, "question_id": qpk, "question": question, 'quiz_is_active': quiz_is_active, 'quiz_id': quiz_id})
 	raise Http404
 
 

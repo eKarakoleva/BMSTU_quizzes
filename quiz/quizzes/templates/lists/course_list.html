@@ -32,7 +32,12 @@
           <tr id="course-{{course.id}}">
             <td class="align-middle"><a class = "cut-text" href = "#" title="{{ course.name }}">{{ course.name }}</a></td>
       			<td class="align-middle">{{ course.course_cafedra }}</td>
-      			<td class="align-middle">{{ course.is_active }}</td>
+      			{% if course.is_active == True %}
+            <td class="align-middle"><input class = "toggle-event" type="checkbox" id="is_active-{{course.id}}" name = "{{course.id}}" data-toggle="toggle" data-on="Ready" data-off="Not Ready" data-onstyle="success" data-offstyle="danger" checked></td>
+            {% else %}
+             <td class="align-middle"><input class = "toggle-event" type="checkbox" id="is_active-{{course.id}}" name = "{{course.id}}" data-toggle="toggle" data-on="Ready" data-off="Not Ready" data-onstyle="success" data-offstyle="danger"></td>
+
+            {% endif %}
             <td class="align-middle add">{{ course.points}}</td>
             <td class="text-right">
               <!--<a href="{% url 'teachers:quiz_add' course.pk %}" class="btn btn-primary">View</a>-->
@@ -89,6 +94,42 @@
       $(".total").html(sum);
     }
     total_points();
+
+
+      $(function() {
+      $('.toggle-event').change(function() {
+        id = $(this).attr('name')
+        id = parseInt(id, 10)
+        var action = confirm("Are you sure you want to activate/unactivate this course?");
+        if (action != false) {
+          var status = false
+          if ($(this).prop('checked')) {
+            status = "True"
+          }
+          else
+          {
+            status = "False"
+          }
+
+          $.ajax({
+              url: '{% url "teachers:course_activate" %}',
+              data: {
+                  'id': id,
+                  'is_active': status
+              },
+              dataType: 'json',
+              success: function (data) {
+                location.reload()
+              }
+          });
+        }
+        else
+        {
+           location.reload()
+        }
+
+      })
+    })
 </script>
 {% endblock javascript %}
 {% endblock %}

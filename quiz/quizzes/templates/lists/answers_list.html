@@ -4,9 +4,10 @@
 	<nav aria-label="breadcrumb">
 		<ol class="breadcrumb">
 			<li class="breadcrumb-item"><a href="{% url 'teachers:course_list' %}">My Quiz</a></li>
-			<!-- <li class="breadcrumb-item active" aria-current="page">{{course.name}}</li> -->
+			<!-- <li class="breadcrumb-item active" aria-current="page">{{course.name}}</li> --> 
 		</ol>
 	</nav>
+	<a href="{% url 'teachers:questions_list' quiz_id %}" class="btn btn-info"><span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span> Go back</a>
 	<!--<a href="" class="btn btn-primary delete mb-3" role="button">Add Question</a>-->
 
 		<!-- Modal -->

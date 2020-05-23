@@ -6,10 +6,11 @@
 			<li class="breadcrumb-item"><a href="{% url 'teachers:course_list' %}">My Quiz</a></li>
 			<!-- <li class="breadcrumb-item active" aria-current="page">{{course.name}}</li> -->
 			{% for q in quizzes %}
-			<li class="breadcrumb-item"><a href="{% url 'teachers:course_list' %}">{{q.course}}</a></li>
+			<li class="breadcrumb-item"><a href="{% url 'teachers:quiz_list' course_id %}">{{q.course}}</a></li>
 			<li class="breadcrumb-item active cut-text" aria-current="page">{{q.name}}</li>
 			{% endfor %}
 		</ol>
+			<a href="{% url 'teachers:quiz_list' course_id %}" class="btn btn-info"><span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span> Go back</a>
 		{% for q in quizzes %}
 		<h3>Quiz points: {{q.max_points}}</h3>
 		{% endfor %}

@@ -61,6 +61,9 @@ class CourseRepository(object):
 	def get_points(self, c_id):
 		return self.model.objects.only('points').get(id=c_id).points
 
+	def update_is_active(self, course_id, status):
+		return self.model.objects.filter(id=course_id).update(is_active=status)
+
 
 class QuestionRepository(object):
 	def __init__(self, model):

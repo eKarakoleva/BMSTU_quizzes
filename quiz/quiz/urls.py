@@ -16,7 +16,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.views.generic.base import TemplateView
-from quizzes.views import *
+from quizzes.teachers import *
+from quizzes.students import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -24,10 +25,11 @@ urlpatterns = [
     path('', TemplateView.as_view(template_name='index.html'), name='index'),
     path('quiz/signup', TemplateView.as_view(template_name='registration/signup.html'), name='signup'),
     path('accounts/signup/teacher/', TeacherSignUpView.as_view(), name='teacher_signup'),
+    path('accounts/signup/students/', StudentSignUpView.as_view(), name='student_signup'),
 
     path('teachers/', include(([
-       path('', CourseListView.as_view(template_name='lists/course_list.html'), name='course_list'),
-       path('course/', CourseCreateView.as_view(template_name='add/course_add.html'), name='course_add'),
+       path('', CourseListView.as_view(template_name='teachers/lists/course_list.html'), name='course_list'),
+       path('course/', CourseCreateView.as_view(template_name='teachers/add/course_add.html'), name='course_add'),
        path('course/delete/', CourseDelete.as_view(), name='course_delete'),
        path('course/<int:pk>/edit/', update_course, name = "update_course"),
        path('course/<int:pk>/quizzes/', view_course_quizzes, name='quiz_list'),
@@ -48,7 +50,21 @@ urlpatterns = [
        path('course/quiz/question/<int:qpk>/answers/add/success', add_answer, name = "add_answer"),
        path('course/quiz/question/answers/delete',  DeleteAnswer.as_view(), name='delete_answer'),
        path('course/quiz/question/answers/<int:pk>/edit/', update_answer, name = "item_edit"),
+
+       path('course/quiz/<int:pk>/answers/check/', view_quiz_for_check, name = "view_quiz_for_check"),
+       path('course/quiz/<int:pk>/answers/check/student/<int:spk>/', get_answers_for_check, name = "get_answers_for_check"),
       
     ], 'quizzes'), namespace='teachers')),
+
+    path('students/', include(([
+       path('', view_all_not_joined_couses, name='course_list_student'),
+       path('course/<int:pk>/edit/', join_course, name = "join_course"),
+       path('course/joined/', view_all_joined_couses, name = "course_joined_courses"),
+       path('course/quiz/<int:pk>/confirm_take/', take_quiz_confirm, name = "take_quiz_confirm"),
+       path('course/quiz/<int:pk>/take/', take_quiz, name = "take_quiz"),
+       path('course/<int:pk>/quizzes/', view_course_active_quizzes, name = "view_course_active_quizzes"),
+       path('course/quiz/<int:pk>/finish/', finish_test, name = "finish_test"),
+       
+    ], 'quizzes'), namespace='students')),
 ]
 

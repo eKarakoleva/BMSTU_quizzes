@@ -10,8 +10,21 @@ class Cafedra(models.Model):
 class User(AbstractUser):
 	is_student = models.BooleanField(default=False)
 	is_teacher = models.BooleanField(default=False)
-	cafedra = models.OneToOneField(Cafedra, on_delete=models.PROTECT, related_name='user_cafedra')
+	cafedra = models.ForeignKey(Cafedra, on_delete=models.PROTECT, related_name='user_cafedra',blank=True, null=True)
 
+def create_superuser(self, email, password, cafedra_id):
+        """
+        Creates and saves a superuser with the given email, date of
+        birth and password.
+        """
+        user = self.create_user(
+            email = email,
+            password=password,
+            cafedra=3,
+        )
+        user.is_admin = True
+        user.save(using=self._db)
+        return user
 
 class Course(models.Model):
 	name = models.TextField()
@@ -74,3 +87,42 @@ class Answers(models.Model):
 
 	def __str__(self):
 		return self.name
+
+class CourseParticipants(models.Model):
+	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_id', unique=False) #student
+	course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='course_id', unique=False)
+	join_date = models.DateTimeField(auto_now=True, unique=False)
+
+	def __str__(self):
+		return self.name
+
+class QuizSolveRecord(models.Model):
+	
+	def __str__(self):
+		return self.name
+
+	quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='qsrquiz_id', unique=False)
+	student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='student_id', unique=False)
+	time_start = models.DateTimeField(auto_now_add=True)
+	time_end = models.DateTimeField(auto_now=True)
+	points = models.IntegerField(default=0)
+	is_fully_checked = models.BooleanField(null = True)
+
+
+class StudentAnswers(models.Model):
+	def __str__(self):
+		return self.name
+
+	solve_info = models.ForeignKey(QuizSolveRecord, on_delete=models.CASCADE, related_name='sasolve_info', unique=False)
+	question = models.ForeignKey(Questions, on_delete=models.CASCADE, related_name='answer_question', unique=False)
+	answer = models.ForeignKey(Answers, on_delete=models.CASCADE, related_name='studanswer_id', unique=False)
+
+class StudentOpenAnswers(models.Model):
+	def __str__(self):
+		return self.name
+
+	solve_info = models.ForeignKey(QuizSolveRecord, on_delete=models.CASCADE, related_name='sosolve_info', unique=False)
+	question = models.ForeignKey(Questions, on_delete=models.CASCADE, related_name='oanswer_question', unique=False)
+	answer = models.TextField(blank=True)
+	points = models.IntegerField(default=0)
+

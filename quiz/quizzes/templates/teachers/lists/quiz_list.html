@@ -68,9 +68,11 @@
             <td class="text-right">
               <a href="{% url 'teachers:questions_list' quiz.id %}" class="btn btn-primary">Questions</a>
               {% if quiz.is_active == False and quiz.is_active == False%}
-              <a class="btn btn-info" id="mod_but" data = {{quiz.id}} data-toggle="modal" href="{% url 'teachers:update_quiz' quiz.id %}" 
-              data-target="#modal" title="edit item" data-tooltip >Update</a> 
-              <a class="btn btn-danger" onClick="deleteQuiz({{quiz.id}})">Delete</a>
+                <a class="btn btn-info" id="mod_but" data = {{quiz.id}} data-toggle="modal" href="{% url 'teachers:update_quiz' quiz.id %}" 
+                data-target="#modal" title="edit item" data-tooltip >Update</a> 
+                <a class="btn btn-danger" onClick="deleteQuiz({{quiz.id}})">Delete</a>
+              {% else %}
+                <a class="btn btn-info" href="{% url 'teachers:view_quiz_for_check' quiz.id %}">Check</a>
               {% endif %}
             </td>
           </tr>

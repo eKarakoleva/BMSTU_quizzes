@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block body_block %}
+  <head>
+
+    {% load static %}
+
+    <script src="{% static 'js/block_buttons.js' %}"></script> 
+
+  </head>
+ <body oncontextmenu="return false;">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item active" aria-current="page">My Courses</li>
+    </ol>
+  </nav>
+      <!-- Modal -->
+   
+  <h2 class="mb-3">Quiz</h2> <br>
+  <div class="card">
+
+
+<form method="post">{% csrf_token %}
+    <ol>
+      {% for answer in answers %}
+        
+          <li style="font-size:19px"> <h3> {{answer.name}}</h3> </li>
+       
+            <div id="{{question_id}}"> 
+                <div class="form-group">
+                    <label for="stud_answer">Student's answer</label>
+                    <textarea class="form-control" rows="3" disabled>{{answer.stud_answer}}</textarea>
+                    <div class="form-group ">
+                      <label for="disabledInput" class="col-sm-2 control-label"></label>
+                      <br>
+                      
+                      <div class="col-sm-2 " style="  float: right; clear: both;">
+                        <label for="stud_answer">Points</label>
+                        <label for="stud_answer">( {{answer.points}} )</label>
+                        <input class="form-control" id="stud_answer" type="text" value="0" name="{{answer.id}}">
+                      </div>
+                      <br>
+                    </div>
+                </div>
+                <br>
+            </div>
+      {% endfor %}
+      <br>
+      <input type="submit" name="g" class="btn btn-primary" value="Submit" id="g">
+      <br><br>
+      </ol>
+
+</form>
+<div id="test"></div>
+  </div>
+
+
+{% block javascript %}
+{% csrf_token %}
+
+<script>
+    window.onbeforeunload = function() { return "Your work will be lost."; };
+    $( "form" ).submit(function( event ) {
+        dataa =  $( this ).serializeArray();
+        console.log(dataa)
+        event.preventDefault();
+        $.ajax({
+            type: 'POST',
+            url: '',
+
+            data: {"data" : JSON.stringify(dataa)},
+            dataType: 'json',
+            success: function (data) {
+                //window.location.href="students/course/joined/";
+                // window.location.href = data.url;
+                //window.location('/students/')
+            }
+        });
+    });
+
+</script>
+{% endblock javascript %}
+{% endblock %}

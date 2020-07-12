@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block body_block %}
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item active" aria-current="page">My Courses</li>
+    </ol>
+  </nav>
+      <!-- Modal -->
+    <div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+      <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+
+          </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+  <h2 class="mb-3">Courses</h2>
+  <div class="card">
+    <table class="table mb-0" id="my_courses">
+      <thead>
+        <tr>
+          <th>Course</th>
+          <th>Cafedra</th>
+          <th>Teacher</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+          <ul class="nav nav-tabs">
+            <li><a href="{% url 'students:course_list_student'%}">All couses</a></li>
+            <li><a href="{% url 'students:course_joined_courses'%}">My courses</a></li>
+        </ul>
+        <br>
+
+
+        {% for course in courses %}
+          <tr id="course-{{course.id}}">
+            <td class="align-middle"><a id="mod_but" data = {{course.id}} data-toggle="modal" href = "{% url 'teachers:view_course' course.id %}" data-target="#modal-view" class = "cut-text" title="{{ course.name }}">{{ course.name }}</a></td>
+      			<td class="align-middle">{{ course.course_cafedra }}</td>
+            <td class="align-middle add">{{ course.owner.last_name}} {{ course.owner.first_name}}</td>
+            <td class="text-right">
+      			<a class="btn btn-success" id="mod_but" data = {{course.id}} data-toggle="modal" href="{% url 'students:join_course' course.id %}" data-target="#modal" data-tooltip>Join</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td class="bg-light text-center font-italic" colspan="5">There are not any courses yet.</td>
+          </tr>
+        {% endfor %}
+
+      </tbody>
+    </table>
+  </div>
+
+{% endblock %}

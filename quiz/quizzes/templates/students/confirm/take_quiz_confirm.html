@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block body_block %}
+{% for q in quiz %}
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">My Courses</li>
+      <li class="breadcrumb-item">{{q.name}}</li>
+      <li class="breadcrumb-item active" aria-current="page">Confirm start of the quiz</li>
+    </ol>
+  </nav>
+  <h2 class="mb-3">Confirm action</h2>
+  
+  <p class="lead">Are you sure you want to start quiz <strong>{{q.name}}</strong>?<br> If you start, there is no going back!</p>
+<div class="card">
+  <ul class="list-group list-group-flush">
+    <li class="list-group-item"><text class = "card-text"><h4 class="card-title">Quiz name</h4><p>{{q.name}}</p></text></li>
+    <li class="list-group-item"><h4 class="card-title">Description</h4> <p class = "card-text">{{q.description}}</p></li>
+    <li class="list-group-item"><h4 class="card-title">Max points</h4><p class = "card-text"> {{q.max_points}}</p></li>
+  </ul>
+</div>
+
+    <a href="{% url 'students:take_quiz' q.id %}" class="btn btn-success btn-lg">Yes, I'm sure</a>
+    <a href="{% url 'students:view_course_active_quizzes' course_id %}" class="btn btn-outline-secondary btn-lg" role="button">Nevermind</a>
+  {% endfor %}
+ 
+{% endblock %}

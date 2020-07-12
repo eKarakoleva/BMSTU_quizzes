@@ -1,0 +1,89 @@
+python manage.py migrate
+py manage.py runserver
+python manage.py makemigrations quizzes
+python manage.py sqlmigrate quizzes 0001
+venv\Scripts\activate
+
+#raise Exception({owner_id})
+python manage.py graph_models trees -o test.png
+
+ctrl + f5 - reload css
+
+
+python -m pip install Django
+pip install psycopg2
+pip install numpy
+
+
+		quiz = { 
+			quiz_id:
+			{
+				quiestion1_id: {qname: qnmae, qtype: qtype, answers: {answer1_id: answer, answer2_id: answer}},
+				quiestion2_id: {qname: qnmae, qtype: qtype, answers: {answer1_id: answer, answer2_id: answer}}
+
+			}
+		}
+
+
+// Avoid scoping issues by encapsulating code inside anonymous function
+(function() {
+  // variable to store our current state
+  var cbstate;
+  
+  // bind to the onload event
+  window.addEventListener('load', function() {
+    // Get the current state from localstorage
+    // State is stored as a JSON string
+    cbstate = JSON.parse(localStorage['CBState'] || '{}');
+  
+    // Loop through state array and restore checked 
+    // state for matching elements
+    for(var i in cbstate) {
+      var el = document.querySelector('input[name="' + i + '"]');
+      if (el) el.checked = true;
+    }
+  
+    // Get all checkboxes that you want to monitor state for
+    var cb = document.getElementsByClassName('savethis');
+  
+    // Loop through results and ...
+    for(var i = 0; i < cb.length; i++) {
+  
+      //bind click event handler
+      cb[i].addEventListener('click', function(evt) {
+        // If checkboxe is checked then save to state
+        if (this.checked) {
+          cbstate[this.name] = true;
+        }
+    
+    // Else remove from state
+        else if (cbstate[this.name]) {
+          delete cbstate[this.name];
+        }
+    
+    // Persist state
+        localStorage.CBState = JSON.stringify(cbstate);
+      });
+    }
+  });
+})();
+
+
+$('.answer').change(function(){
+    if($(this).is(":checked")) {
+        $(this).addClass('savethis');
+    } else {
+        $(this).removeClass('savethis');
+    }
+});
+
+
+// Attaching click event handlers to all radio buttons...
+$('input[type="radio"]').bind('click', function(){
+    // Processing only those that match the name attribute of the currently clicked button...
+    $('input[name="' + $(this).attr('name') + '"]').not($(this)).trigger('deselect'); // Every member of the current radio group except the clicked one...
+});
+
+$('input[type="radio"]').bind('deselect', function(){
+    $(this).removeClass('savethis');
+})

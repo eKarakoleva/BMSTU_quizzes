@@ -3,8 +3,8 @@ from django.contrib.auth.forms import UserCreationForm
 from django.db import transaction
 from django.forms.utils import ValidationError
 
-from quizzes.models import (User, Cafedra, Course, Quiz, Questions, QuestionType, Answers)
-
+from quizzes.models import (User, Cafedra, Course, Quiz, Questions, QuestionType, Answers, StudentAnswers)
+from quizzes.repositories import AnswerRepository
 class TeacherSignUpForm(UserCreationForm):
 	class Meta(UserCreationForm.Meta):
 		model = User
@@ -14,6 +14,19 @@ class TeacherSignUpForm(UserCreationForm):
 	def save(self, commit=True):
 		user = super().save(commit=False)
 		user.is_teacher = True
+		if commit:
+			user.save()
+		return user
+
+class StudentSignUpForm(UserCreationForm):
+	class Meta(UserCreationForm.Meta):
+		model = User
+		fields = ('username', 'email', 'first_name', 'last_name', 'cafedra')
+		
+
+	def save(self, commit=True):
+		user = super().save(commit=False)
+		user.is_student = True
 		if commit:
 			user.save()
 		return user
@@ -99,5 +112,31 @@ class AnswerForm(forms.ModelForm):
 			self.fields[name].widget.attrs.update({
 				'class': 'form-control',
 			})
-		self.fields['points'].queryset = Answers.objects.filter(id=76)
 
+#STUDENTS
+
+class ActivationCodeForm(forms.ModelForm):
+	class Meta:
+		model = Answers
+		fields = ('name', 'points', 'correct')
+
+		widgets = {
+			'name': forms.Textarea(attrs={'rows':4, 'cols':15}),
+		}
+
+	def __init__(self, *args, **kwargs):
+		super(AnswerForm, self).__init__(*args, **kwargs)
+
+		for name in self.fields.keys():
+			self.fields[name].widget.attrs.update({
+				'class': 'form-control',
+			})
+
+class TakeQuizForm(forms.ModelForm):
+
+	class Meta:
+		model = StudentAnswers
+		fields = ('question','answer')
+
+	def __init__(self, *args, **kwargs):
+		super(TakeQuizForm, self).__init__(*args, **kwargs)

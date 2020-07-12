@@ -5,8 +5,10 @@
     <h1>Welcome to the Quizzes !</h1>
     {% if user.is_authenticated %}
         <h2>Hello {{ user.username }}</h2>
-		{% if user.is_authenticated %}
+		{% if user.is_authenticated and user.is_teacher%}
 		<a href="{% url 'teachers:course_list'%}" class="btn btn-primary">My courses</a>
+    {% else %}
+    <a href="{% url 'students:course_list_student'%}" class="btn btn-primary">Courses</a>
 		{% endif %}
 		
     {% else %}

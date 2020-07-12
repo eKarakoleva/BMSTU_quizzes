@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block body_block %}
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">My Courses</li>
+      <li class="breadcrumb-item active" aria-current="page">{{course_name}} </li>
+    </ol>
+  </nav>
+
+   <br>
+   <br>
+  <div class="card">
+    <table class="table mb-0" id="my_quizzes">
+      <thead>
+        <tr>
+          <th>Quiz</th>
+          <th>Course</th>
+          <th>My points</th>
+          <th>Min Points</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for quiz in quizzes %}
+          <tr id="quiz-{{quiz.id}}">
+             <style>.cut-text { text-overflow: ellipsis-word; }</style>
+            <td class="align-middle"><a id="mod_but" data = {{quiz.id}} data-toggle="modal" href = "#" data-target="#modal-view" class = "cut-text" title="{{ quiz.name }}">{{ quiz.name }}</a></td>
+      			<td class="align-middle">{{ quiz.course }}</td>
+            {% if quiz.sis_fully_checked == True%}
+              {% if quiz.spoints >= quiz.min_ponts%}
+                <td class="align-middle"><span class="label label-success">{{quiz.spoints}}</span></td>
+              {% else %}
+                <td class="align-middle"><span class="label label-danger">{{quiz.spoints}}</span></td>
+              {% endif %}
+            {% endif %}
+            {% if quiz.sis_fully_checked == False %}
+              <td class="align-middle"><span class="label label-warning ">Pending...</span></td>            
+            {% endif %}
+            {% if quiz.sis_fully_checked == None %}
+              <td class="align-middle"><span class="label label-info ">None</span></td>            
+            {% endif %}
+            <td class="align-middle add">{{quiz.min_points}}</td>
+            <td class="text-right">
+            {% if quiz.is_started != True %}
+              <a href="{% url 'students:take_quiz_confirm' quiz.id %}" class="btn btn-success">Take</a>
+            {% else %}
+              {% if quiz.is_started != True or quiz.sis_fully_checked == None %}
+                <a href="{% url 'students:take_quiz_confirm' quiz.id %}" class="btn btn-warning">Take</a>
+              {% endif %}
+            {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td class="bg-light text-center font-italic" colspan="5">You haven't created any quizzes yet.</td>
+          </tr>
+        {% endfor %}
+          <tr>
+            <td class="align-middle"></td>
+            <td class="align-middle"></td>
+            <td class="align-middle"></td>
+            <td class="align-middle"></td>
+            <td class="text-right"></td>
+          </tr>
+      </tbody>
+    </table>
+  </div>
+  {% block javascript %}
+
+{% endblock javascript %}
+{% endblock %}

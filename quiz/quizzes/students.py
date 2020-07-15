@@ -17,6 +17,8 @@ from django.forms.formsets import formset_factory
 import quizzes.helper as helper
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 import json
+import datetime
+from django.utils import timezone
 
 class StudentSignUpView(CreateView):
 	model = User
@@ -79,12 +81,27 @@ def take_quiz_confirm(request, pk):
 	if not is_in_joined_courses:
 		raise Http404
 
-	return render(request, 'students/confirm/take_quiz_confirm.html', {'quiz': quiz, 'course_id': course_id})
+	if quiz:
+		if is_started:
+			timer = quiz[0].timer_minutes
+			if timer != 0:
+				start_time = qsrr.get_start_time(pk, request.user.id)
+				end_time = start_time + datetime.timedelta(minutes = timer)
+
+				now = timezone.now()
+				now = timezone.localtime(now)
+				time_delta = (end_time - now)
+
+				minutes_left = time_delta.seconds / 60
+		else:
+			minutes_left = quiz[0].timer_minutes
+	return render(request, 'students/confirm/take_quiz_confirm.html', {'quiz': quiz, 'course_id': course_id, 'minutes_left': round(minutes_left)})
 
 
 @login_required
 @student_required
 def take_quiz(request, pk):
+	qr = repo.QuizRepository(Quiz)
 	test = helper.construct_quiz(pk)
 	qsrr = repo.QuizSolveRecordRepository(QuizSolveRecord)
 	cpr = repo.CourseParticipantsRepository(CourseParticipants)
@@ -100,15 +117,28 @@ def take_quiz(request, pk):
 	is_started = qsrr.check_if_started(pk, request.user.id)
 	if(not is_started):
 		qsrr.start_quiz(pk, request.user.id)
-	return render(request, 'students/test.html', {'tests': test, 'quiz_id': pk})
+
+	timer = qr.get_quiz_timer(pk)
+	start_time = qsrr.get_start_time(pk, request.user.id)
+	time = start_time + datetime.timedelta(minutes = timer)
+
+	now = timezone.now()
+	now = timezone.localtime(now)
+	time_delta = (time - now)
+
+	time_delta = time_delta.seconds / 60
+	quiz_name =qr.get_name(pk)
+	return render(request, 'students/quiz_solve.html', {'tests': test, 'quiz_id': pk, 'timer': timer, 'minutes_left': time_delta, 'quiz_name': quiz_name})
 
 def view_course_active_quizzes(request, pk):
 	quiz = repo.QuizRepository(Quiz)
-	#quizzes = quiz.get_active_quizzes(pk)
 	quizzes = quiz.get_active_quizzes_student_info(pk, request.user.id)
-	qsrr = repo.QuizSolveRecordRepository(QuizSolveRecord)
+	if not quizzes:
+		course_name = "NONE"
+	else:
+		course_name = quizzes[0].course
 
-	return render(request, 'students/lists/quiz_list.html', {'quizzes': quizzes, 'course_name': quizzes[0].course})
+	return render(request, 'students/lists/quiz_list.html', {'quizzes': quizzes, 'course_name': course_name})
 
 @csrf_exempt
 @login_required
@@ -150,9 +180,19 @@ def finish_test(request, pk):
 							#save answer + compare algorithm = points
 							soar.save_answer(solve_info_id, key, answer, points_compare)
 	qsrr.finish_quiz(pk, request.user.id, points, is_fully_checked)
-	raise Exception({points})
+	qr = repo.QuizRepository(Quiz)
+	course_id = qr.get_course_id(pk)
 	return JsonResponse({
 		'success': True,
-		'url': reverse('students:view_course_active_quizzes', kwargs={'pk': 1}), #, args=[{'courses': courses}]
+		'url': reverse('students:view_course_active_quizzes', kwargs={'pk': course_id}), #, args=[{'courses': courses}]
 		})
+
+@login_required
+@student_required
+def student_view_quiz_info(request, pk, template_name='students/quiz_info.html'):
+	quiz= get_object_or_404(Quiz, pk=pk)
+	quizzesR = repo.QuizRepository(Quiz)
+	owner_id = quizzesR.get_owner_id(pk)
+	quizzes = quizzesR.get_by_id(pk)
+	return render(request, template_name, {'id': pk, 'quizzes': quizzes})
 

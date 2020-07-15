@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block body_block %}
+  <head>
+
+	{% load static %}
+
+	<script src="{% static 'js/block_buttons.js' %}"></script> 
+
+  </head>
+ <body oncontextmenu="return false;">
+  <nav aria-label="breadcrumb">
+	<ol class="breadcrumb">
+	  <li class="breadcrumb-item active" aria-current="page">My Courses </li>
+	</ol>
+  </nav>
+	  <!-- Modal -->
+   
+  <h2 class="mb-3 check">{{quiz_name}}</h2> <br>
+
+  <div id="horizontal"><h2 id="timer"></h2></div>
+  <div class="card">
+
+
+<form method="post">{% csrf_token %}
+	<ol>
+	  {% for question_id, qinfo in tests.items %}
+		
+		  <li style="font-size:19px"> <h3> {{qinfo.qname}}</h3> </li>
+	   
+			<div id="{{question_id}}"> 
+				<ul class="list-group">
+				   {% for id_ans, answer in qinfo.answers.items %}
+						 
+						{% if qinfo.qtype == 'multiple'%}
+							<li class="list-group-item"><input type="checkbox" class="answer " name="{{question_id}}" value="{{id_ans}}"> {{answer.answer}}</li>
+						{% endif %}
+
+						{% if qinfo.qtype == 'single' %}
+							<li class="list-group-item"><input type="radio" class="answer" name="{{question_id}}" value="{{id_ans}}"> {{answer.answer}}</li>
+						{%endif%} 
+								  
+					{% endfor %}
+				</ul> 
+				{% if qinfo.qtype == 'open' or qinfo.qtype == 'compare'%}
+					<div class="form-group">
+						<label for="exampleFormControlTextarea1">Write your answer here</label>
+						<textarea class="form-control" id="exampleFormControlTextarea1" name="{{question_id}}" rows="3"></textarea>
+					</div>
+				{%endif%}
+				<br>
+			</div>
+			
+	  {% endfor %}
+	  <input type="submit" name="g" class="btn btn-primary" value="Submit" id="g">
+	  <br><br>
+	  </ol>
+
+</form>
+<div id="test"></div>
+  </div>
+
+
+{% block javascript %}
+{% csrf_token %}
+
+<script>
+	function ajax_send(user_data){
+		$.ajax({
+			type: 'POST',
+			url: '{% url "students:finish_test" quiz_id%}',
+
+			data: {"data" : JSON.stringify(user_data)},
+			dataType: 'json',
+			success: function (data) {
+				window.location.href = data.url;
+			}
+		});
+	}
+
+	$( "form" ).submit(function( event ) {
+		$(this).find('input[type="submit"]').attr('disabled','disabled');
+		user_data =  $( this ).serializeArray();
+		event.preventDefault();
+		ajax_send(user_data)
+	});
+
+
+
+	var minutes_left = "{{minutes_left}}"
+	var timer_app = "{{timer}}"
+	function startTimer(duration, display) {
+		var timer = duration, minutes, seconds, hours;
+		var x = setInterval(function () {
+			hours = (timer / 3600) | 0;
+			minutes = ((timer % 3600) / 60) | 0;
+			seconds = (timer % 60) | 0;
+			
+			hours = hours < 10 ? "0" + hours : hours;
+			minutes = minutes < 10 ? "0" + minutes : minutes;
+			seconds = seconds < 10 ? "0" + seconds : seconds;
+
+			display.textContent = hours + ":" + minutes + ":" + seconds;
+
+			if (--timer < 0) {
+				clearInterval(x);
+				document.getElementById("timer").innerHTML = "Time is over!";
+				$("form").find('input[type="submit"]').attr('disabled','disabled');
+				user_data =  $( "form" ).serializeArray();
+				ajax_send(user_data)
+			}
+		}, 1000);
+	}
+
+	if (timer_app != 0) {
+		window.onload = function () {
+			var Minutes = 60 * minutes_left,
+				display = document.querySelector('#timer');
+			startTimer(Minutes, display);
+		};
+	}
+	else
+	{
+		document.getElementById("timer").innerHTML = "∞"
+	}
+
+
+	var menu_height = $(".menu-container").height()
+	var plus_h = $(".check").position()['top'] - menu_height
+	$("#horizontal").css({"top": menu_height + plus_h});
+</script>
+{% endblock javascript %}
+{% endblock %}

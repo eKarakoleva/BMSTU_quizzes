@@ -34,6 +34,15 @@
           </div><!-- /.modal-content -->
       </div><!-- /.modal-dialog -->
     </div><!-- /.modal -->
+
+      <!-- Modal -->
+      <div class="modal fade" id="modal-code" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+
+            </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+      </div><!-- /.modal -->
   <a href="{% url 'teachers:course_list' %}" class="btn btn-info">
     <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
      Go back
@@ -67,12 +76,21 @@
             <td class="align-middle add">{{quiz.max_points}}</td>
             <td class="text-right">
               <a href="{% url 'teachers:questions_list' quiz.id %}" class="btn btn-primary">Questions</a>
-              {% if quiz.is_active == False and quiz.is_active == False%}
+              {% if quiz.is_active == False%}
                 <a class="btn btn-info" id="mod_but" data = {{quiz.id}} data-toggle="modal" href="{% url 'teachers:update_quiz' quiz.id %}" 
                 data-target="#modal" title="edit item" data-tooltip >Update</a> 
                 <a class="btn btn-danger" onClick="deleteQuiz({{quiz.id}})">Delete</a>
               {% else %}
-                <a class="btn btn-info" href="{% url 'teachers:view_quiz_for_check' quiz.id %}">Check</a>
+
+                    <button class="btn btn-info dropdown-toggle" type="button" data-toggle="dropdown">Students
+                    <span class="caret"></span></button>
+                    <ul class="dropdown-menu">
+                        <li><a href="{% url 'teachers:view_quiz_for_check' quiz.id %}">Check quizzes</a></li>
+                        <li><a href="{% url 'teachers:view_students_quiz_grades' quiz.id %}">View grades</a></li>
+                    </ul>
+                
+                <a class="btn btn-danger" id="mod_but" data = {{quiz.id}} data-toggle="modal" href="{% url 'teachers:update_in_code' quiz.id %}" 
+                data-target="#modal-code" title="edit item" data-tooltip >New in code</a> 
               {% endif %}
             </td>
           </tr>
@@ -91,6 +109,7 @@
       </tbody>
     </table>
   </div>
+
   {% block javascript %}
   <script type="text/javascript">
 

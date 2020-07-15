@@ -3,8 +3,8 @@ import string
 import numpy as np
 import re
 
-from quizzes.repositories import QuizRepository, CourseRepository, QuestionRepository, AnswerRepository, CourseParticipantsRepository, StudentOpenAnswersRepository
-from quizzes.models import Cafedra, User, Course, CourseParticipants, Quiz, Questions, Answers, StudentOpenAnswers
+import quizzes.repositories as repo
+from quizzes.models import Cafedra, User, Course, CourseParticipants, Quiz, Questions, Answers, StudentOpenAnswers, QuizSolveRecord
 
 def generate_code(lettersCount = 4, digitsCount = 2):
 	sampleStr = ''.join((random.choice(string.ascii_letters) for i in range(lettersCount)))
@@ -16,15 +16,15 @@ def generate_code(lettersCount = 4, digitsCount = 2):
 	finalString = ''.join(sampleList)
 	return finalString
 
-def check_grades(exelent, verygood, good, bad):
-	if exelent > verygood and verygood > good and good > bad:
+def check_grades(exelent, good, bad):
+	if exelent > good and good > bad:
 		return True
 	else:
 		return False
 
 def construct_quiz(quiz_id):
-	quesrtr = QuestionRepository(Questions)
-	ar = AnswerRepository(Answers)
+	quesrtr = repo.QuestionRepository(Questions)
+	ar = repo.AnswerRepository(Answers)
 
 	questions = quesrtr.get_by_quiz_id(quiz_id)
 
@@ -48,19 +48,25 @@ def construct_quiz(quiz_id):
 	return quiz
 
 def open_answers_for_check(quiz_id, stud_id):
-	quesrtr = QuestionRepository(Questions)
+	quesrtr = repo.QuestionRepository(Questions)
 	open_questions = quesrtr.get_open_questions(quiz_id)
-	soar = StudentOpenAnswersRepository(StudentOpenAnswers)
+	soar = repo.StudentOpenAnswersRepository(StudentOpenAnswers)
 
+	qsrr = repo.QuizSolveRecordRepository(QuizSolveRecord)
+	solve_info_id = qsrr.get_solve_info_id(quiz_id, stud_id)
 	if open_questions:
 		for oq in open_questions:
-			student_answer = soar.get_stud_open_answer_text(quiz_id, stud_id, oq['id'])
-			oq['stud_answer'] = student_answer
+			student_answer = soar.get_stud_open_answer_text(solve_info_id, oq['id'])
+			if not student_answer:
+				oq['exist'] = False
+			else:
+				oq['exist'] = True
+				oq['stud_answer'] = student_answer[0]['answer']
 	return open_questions
 
 def construct_main(quiz_id):
-	quesrtr = QuestionRepository(Questions)
-	ar = AnswerRepository(Answers)
+	quesrtr = repo.QuestionRepository(Questions)
+	ar = repo.AnswerRepository(Answers)
 
 	questions = quesrtr.get_id_and_type(quiz_id)
 
@@ -134,7 +140,7 @@ def levenshtein_ratio_and_distance(s, t, ratio_calc = False):
 
 
 def check_student_compare_answer(question_id, stud_answer):
-	ar = AnswerRepository(Answers)
+	ar = repo.AnswerRepository(Answers)
 	answers = ar.get_answer_points_and_name_by_question(question_id)
 	for answer in answers:
 		teacher_answer, student_answer = prepare_string(str(answer.name), stud_answer)

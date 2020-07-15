@@ -1,4 +1,4 @@
-        <form id="item_update_form" method='post' class="form" role="form" action="{% url 'teachers:update_quiz' id %}">
+        <form id="item_update_form" method='post' class="form" role="form" action="{% url 'teachers:update_in_code' id %}">
               <div class="modal-header">
                 <h4 class="modal-title" id="myModalLabel">Update</h4>
               </div>
@@ -20,6 +20,7 @@
                         </div>
 
                     {% endfor %}
+              <button id = "new_code" class="btn btn-primary" type="button" id="button-addon2">Generate new code</button>
               </div>
 
               <div class="modal-footer">
@@ -39,6 +40,20 @@
                     $('body').on('hidden.bs.modal', '.modal', function () {
                         $(this).removeData('bs.modal');
                     });
+                });
+
+                function makeid(length) {
+                   var result           = '';
+                   var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                   var charactersLength = characters.length;
+                   for ( var i = 0; i < length; i++ ) {
+                      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+                   }
+                   return result;
+                }
+
+                $( "#new_code" ).click(function() {
+                    $("#id_in_code").val(makeid(6))
                 });
 
         </script>

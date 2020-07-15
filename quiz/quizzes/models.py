@@ -45,10 +45,10 @@ class Quiz(models.Model):
 	description = models.TextField(blank=True)
 	course = models.ForeignKey(Course, on_delete=models.CASCADE,  related_name='quiz_course', unique=False)
 	max_points = models.IntegerField(default=100)
-	verygood_points = models.IntegerField(default=0)
 	good_points = models.IntegerField(default=0)
 	min_points = models.IntegerField(default=0)
-	done = models.BooleanField(default=False)
+	timer_minutes = models.IntegerField(default=0)
+	#done = models.BooleanField(default=False)
 	is_active = models.BooleanField(default=False)
 	in_code = models.CharField(max_length=6, blank=True)
 
@@ -104,7 +104,8 @@ class QuizSolveRecord(models.Model):
 	quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='qsrquiz_id', unique=False)
 	student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='student_id', unique=False)
 	time_start = models.DateTimeField(auto_now_add=True)
-	time_end = models.DateTimeField(auto_now=True)
+	#time_end = models.DateTimeField(auto_now=True)
+	time_end = models.DateTimeField(auto_now_add=True)
 	points = models.IntegerField(default=0)
 	is_fully_checked = models.BooleanField(null = True)
 

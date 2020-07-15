@@ -66,10 +66,25 @@ class QuizForm(forms.ModelForm):
 				'class': 'form-control',
 			})
 
+class QuizInCodeForm(forms.ModelForm):
+	class Meta:
+		model = Quiz
+		fields = ('in_code', )
+
+	def __init__(self, *args, **kwargs):
+		super(QuizInCodeForm, self).__init__(*args, **kwargs)
+
+		for name in self.fields.keys():
+			self.fields[name].widget.attrs.update({
+				'class': 'form-control',
+			})
+
+		self.fields['in_code'].widget.attrs['readonly'] = True
+
 class QuizActivateForm(forms.ModelForm):
 	class Meta:
 		model = Quiz
-		fields = ('max_points', 'verygood_points', 'good_points', 'min_points')
+		fields = ('max_points', 'good_points', 'min_points', 'timer_minutes')
 
 	def __init__(self, *args, **kwargs):
 		super(QuizActivateForm, self).__init__(*args, **kwargs)

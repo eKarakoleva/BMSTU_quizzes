@@ -25,8 +25,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>{% block title %}Django School{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css?family=Clicker+Script" rel="stylesheet">
-  
     <link rel="stylesheet" type="text/css" href="{% static 'css/app.css' %}">
+    
+
 
 </head>
   <body>
@@ -34,10 +35,13 @@
       {% include 'messages.html' %}
     </main>
     <nav class="navbar navbar-default navbar-static-top">
-      <div class="container">
+      <div class="container menu-container">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="{% url 'index' %}">QUIZZES</a>
+        </div>
         <ul class="nav navbar-nav">
 {# Django Home Link / Admin Link / Register Link#}
-          <li><a class="navbar-brand" href="{% url 'index' %}">QUIZZES</a></li>
+
           <li><a class="navbar-link" href="{% url 'admin:index' %}">Admin</a></li>
           <li><a class="navbar-link" href="{% url 'signup' %}">Register</a></li>     
           {# Some logic on what to display for last item#}
@@ -47,12 +51,14 @@
             <li><a href="{% url 'login' %}" class="navbar-link" >Login</a></li>
           {% endif %}
 
-</ul>
+        </ul>
       </div>
     </nav>
+
     <div class="container">
     {% block body_block %}
     {% endblock %}
     </div>
+       <script src="{% static 'js/app.js' %}"></script> 
   </body>
 </html>

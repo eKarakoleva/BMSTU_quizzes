@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
 {% block body_block %}
-  <nav aria-label="breadcrumb">
+    <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item active" aria-current="page">My Courses</li>
-    </ol>
-  </nav>
+        <li class="breadcrumb-item active" aria-current="page">My Courses</li>
+        </ol>
+    </nav>
       <!-- Modal -->
     <div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
       <div class="modal-dialog modal-lg">
@@ -23,57 +23,57 @@
           </div><!-- /.modal-content -->
       </div><!-- /.modal-dialog -->
     </div><!-- /.modal -->
-  <h2 class="mb-3">My Courses</h2>
-  <a href="{% url 'teachers:course_add' %}" class="btn btn-primary mb-3" role="button">Add Course</a>
-  <div class="card">
-    <table class="table mb-0" id="my_courses">
-      <thead>
-        <tr>
-          <th>Course</th>
-          <th>Cafedra</th>
-          <th>Active</th>
-          <th>Points</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for course in courses %}
-          <tr id="course-{{course.id}}">
-              <td class="align-middle"><a id="mod_but" data = {{course.id}} data-toggle="modal" href = "{% url 'teachers:view_course' course.id %}" data-target="#modal-view" class = "cut-text" title="{{ course.name }}">{{ course.name }}</a></td>
-      			<td class="align-middle">{{ course.course_cafedra }}</td>
-      			{% if course.is_active == True %}
-            <td class="align-middle"><input class = "toggle-event" type="checkbox" id="is_active-{{course.id}}" name = "{{course.id}}" data-toggle="toggle" data-on="Ready" data-off="Not Ready" data-onstyle="success" data-offstyle="danger" checked></td>
-            {% else %}
-             <td class="align-middle"><input class = "toggle-event" type="checkbox" id="is_active-{{course.id}}" name = "{{course.id}}" data-toggle="toggle" data-on="Ready" data-off="Not Ready" data-onstyle="success" data-offstyle="danger"></td>
+    <h2 class="mb-3">My Courses</h2>
+    <a href="{% url 'teachers:course_add' %}" class="btn btn-primary mb-3" role="button">Add Course</a>
+    <div class="card">
+        <table class="table mb-0" id="my_courses">
+            <thead>
+                <tr>
+                    <th>Course</th>
+                    <th>Cafedra</th>
+                    <th>Active</th>
+                    <th>Points</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for course in courses %}
+                  <tr id="course-{{course.id}}">
+                      <td class="align-middle"><a id="mod_but" data = {{course.id}} data-toggle="modal" href = "{% url 'teachers:view_course' course.id %}" data-target="#modal-view" class = "cut-text" title="{{ course.name }}">{{ course.name }}</a></td>
+              			<td class="align-middle">{{ course.course_cafedra }}</td>
+              			{% if course.is_active == True %}
+                    <td class="align-middle"><input class = "toggle-event" type="checkbox" id="is_active-{{course.id}}" name = "{{course.id}}" data-toggle="toggle" data-on="Ready" data-off="Not Ready" data-onstyle="success" data-offstyle="danger" checked></td>
+                    {% else %}
+                     <td class="align-middle"><input class = "toggle-event" type="checkbox" id="is_active-{{course.id}}" name = "{{course.id}}" data-toggle="toggle" data-on="Ready" data-off="Not Ready" data-onstyle="success" data-offstyle="danger"></td>
 
-            {% endif %}
-            <td class="align-middle add">{{ course.points}}</td>
-            <td class="text-right">
-      			  <a href="{% url 'teachers:quiz_list' course.pk %}" class="btn btn-primary">Quizzes</a>
-              {% if course.is_active == False%}
-                <a class="btn btn-info" id="mod_but" data = {{course.id}} data-toggle="modal" href="{% url 'teachers:update_course' course.id %}"  data-target="#modal" data-tooltip>Update</a> 
-      			   <a class="btn btn-danger" onClick="deleteCourse({{course.id}})">Delete</a>
-              {% else %}
-                <a class="btn btn-info">Participants</a>
-              {% endif %}
-            </td>
-          </tr>
-        {% empty %}
-          <tr>
-            <td class="bg-light text-center font-italic" colspan="5">You haven't created any courses yet.</td>
-          </tr>
-        {% endfor %}
-        <tr>
-            <td class="align-middle"><strong>TOTAL</strong></td>
-            <td class="align-middle"></td>
-            <td class="align-middle"></td>
-            <td class="align-middle"><strong class="total"></strong></td>
-            <td class="text-right"></td>
-          </tr>
-      </tbody>
-    </table>
-  </div>
-
+                    {% endif %}
+                    <td class="align-middle add">{{ course.points}}</td>
+                    <td class="text-right">
+              			  <a href="{% url 'teachers:quiz_list' course.pk %}" class="btn btn-primary">Quizzes</a>
+                      {% if course.is_active == False%}
+                        <a class="btn btn-info" id="mod_but" data = {{course.id}} data-toggle="modal" href="{% url 'teachers:update_course' course.id %}"  data-target="#modal" data-tooltip>Update</a> 
+              			   <a class="btn btn-danger" onClick="deleteCourse({{course.id}})">Delete</a>
+                      {% else %}
+                        <a class="btn btn-info">Participants</a>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td class="bg-light text-center font-italic" colspan="5">You haven't created any courses yet.</td>
+                  </tr>
+                {% endfor %}
+                <tr>
+                    <td class="align-middle"><strong>TOTAL</strong></td>
+                    <td class="align-middle"></td>
+                    <td class="align-middle"></td>
+                    <td class="align-middle"><strong class="total"></strong></td>
+                    <td class="text-right"></td>
+                  </tr>
+            </tbody>
+        </table>
+    </div>
+ 
   {% block javascript %}
   <script type="text/javascript">
 
@@ -103,6 +103,8 @@
       });
       $(".total").html(sum);
     }
+
+    
     total_points();
 
 
@@ -110,7 +112,7 @@
       $('.toggle-event').change(function() {
         id = $(this).attr('name')
         id = parseInt(id, 10)
-        var action = confirm("Are you sure you want to activate/unactivate this course?");
+        var action = confirm("Are you sure you want to activate/unactivate this course?\nDeactivation will deactivate ALL quizzes in this course.");
         if (action != false) {
           var status = false
           if ($(this).prop('checked')) {
@@ -142,4 +144,4 @@
     })
 </script>
 {% endblock javascript %}
-{% endblock %}
+ {% endblock %}

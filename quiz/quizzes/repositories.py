@@ -1,5 +1,8 @@
 from django.db.models import Sum
 from quizzes.models import CourseParticipants, User, QuizSolveRecord, Quiz, QuizSolveRecord
+from django.utils import timezone
+import datetime
+
 class QuizRepository(object):
 	def __init__(self, model):
 		self.model = model
@@ -15,6 +18,9 @@ class QuizRepository(object):
 
 	def get_owner_id(self, q_id):
 		return self.model.objects.only('owner_id').get(id=q_id).owner_id
+
+	def get_name(self, quiz_id):
+		return self.model.objects.only('name').get(id=quiz_id).name
 
 	def quiz_delete(self, quizpk):
 		return self.model.objects.get(id=quizpk).delete()
@@ -59,6 +65,22 @@ class QuizRepository(object):
 					#quiz.student.time_end = qsi.time_end
 		return all_course_quizzes
 		
+	def get_point_schedule(self, quizpk):
+		return self.model.objects.filter(id=quizpk).values('max_points', 'min_points', 'good_points')
+
+	def get_quiz_timer(self, quiz_id):
+		timer = self.model.objects.filter(id=quiz_id).values('timer_minutes')
+		if not timer:
+			timer = 0
+		else:
+			timer = timer[0]['timer_minutes']
+		return timer
+
+	def update_all_course_quizzes_status(self, course_id, status):
+		return self.model.objects.filter(course_id=course_id).update(is_active=status)
+
+	def is_course_active(self, quiz_id):
+		return self.model.objects.filter(id=quiz_id).select_related('course').values('course__is_active')[0]['course__is_active']
 
 class CourseRepository(object):
 	def __init__(self, model):
@@ -95,7 +117,12 @@ class CourseRepository(object):
 		all_mine = CourseParticipants.objects.filter(user_id = user_id).values_list('course_id')
 		all_active = self.model.objects.filter(is_active = True).exclude(id__in=all_mine)
 		return all_active
-		
+	
+	def update_is_active(self, course_id, status):
+		return self.model.objects.filter(id=course_id).update(is_active=status)	
+
+	def is_active(self, course_id):
+		return self.model.objects.only('is_active').get(id=course_id).is_active
 
 
 class QuestionRepository(object):
@@ -155,6 +182,10 @@ class QuestionRepository(object):
 
 	def get_open_questions(self, quiz_id):
 		ids = self.model.objects.filter(quiz_id=quiz_id, qtype = 'open').values('id', 'points', 'name')
+		return ids
+
+	def get_open_questions_id_points(self, quiz_id):
+		ids = self.model.objects.filter(quiz_id=quiz_id, qtype = 'open').values('id', 'points')
 		return ids
 
 class AnswerRepository(object):
@@ -234,6 +265,15 @@ class CourseParticipantsRepository(object):
 		
 		return joined
 
+
+	def is_user_participant(self, user_id, course_id):
+		is_participant = self.model.objects.filter(user_id = user_id, course_id = course_id).values('id')
+		if not is_participant:
+			is_participant = False
+		else:
+			is_participant = True
+		return is_participant
+
 class QuizSolveRecordRepository(object):
 	def __init__(self, model):
 		self.model = model
@@ -257,6 +297,7 @@ class QuizSolveRecordRepository(object):
 	def finish_quiz(self, quiz_id, student_id, points, is_fully_checked):
 		#return self.model.objects.filter(quiz_id = quiz_id, student_id = student_id).update(time_end = time_end, points= points, is_fully_checked = is_fully_checked)
 		quiz_solve = self.model.objects.get(quiz_id = quiz_id, student_id = student_id)
+		quiz_solve.time_end = datetime.datetime.now()
 		quiz_solve.points = points
 		quiz_solve.is_fully_checked = is_fully_checked
 		quiz_solve.save()
@@ -275,8 +316,8 @@ class QuizSolveRecordRepository(object):
 
 		return is_submitted
 
-	def get_quizzes_for_check(self, quiz_id):
-		quizzes = self.model.objects.filter(quiz_id=quiz_id, is_fully_checked=False)
+	def get_quizzes_and_students(self, quiz_id, is_fully_checked):
+		quizzes = self.model.objects.filter(quiz_id=quiz_id, is_fully_checked=is_fully_checked)
 
 		if quizzes.exists():
 			for quiz in quizzes:
@@ -288,6 +329,41 @@ class QuizSolveRecordRepository(object):
 					quiz.stud_lname = student[0].last_name
 					quiz.stud_cefedra = student[0].cafedra.name
 		return quizzes
+
+	def update_quiz_points_and_status(self, id, points, status):
+		if id > 0:
+			quiz_solve = self.model.objects.get(id = id)
+			quiz_solve.points = points
+			quiz_solve.is_fully_checked = status
+			quiz_solve.save()
+
+	def get_points(self, id):
+		points = self.model.objects.only('points').get(id = id).points
+		if(not points):
+			points = 0
+		return points
+
+	def get_start_time(self, quiz_id, student_id):
+		#now_plus_10 = now + datetime.timedelta(minutes = 120)
+		#raise Exception({now_plus_10.strftime("%b %d %Y %H:%M:%S")})
+
+		time = self.model.objects.filter(quiz_id = quiz_id, student_id = student_id).values('time_start').distinct()
+		if not time.exists():
+			time = 0
+		else:
+			time = timezone.localtime(time[0]['time_start'])
+		return time
+
+	def get_end_time(self, quiz_id, student_id):
+		#now_plus_10 = now + datetime.timedelta(minutes = 120)
+		#raise Exception({now_plus_10.strftime("%b %d %Y %H:%M:%S")})
+
+		time = self.model.objects.filter(quiz_id = quiz_id, student_id = student_id).values('time_end').distinct()
+		if not time.exists():
+			time = 0
+		else:
+			time = timezone.localtime(time[0]['time_start'])
+		return time
 
 class StudentAnswersRepository(object):
 	def __init__(self, model):
@@ -310,13 +386,15 @@ class StudentOpenAnswersRepository(object):
 				answer = answer, 
 				points = points)
 
-	def get_stud_open_answer_text(self, quiz_id, student_id, question_id):
-		qsrr = QuizSolveRecordRepository(QuizSolveRecord)
-		solve_info_id = qsrr.get_solve_info_id(quiz_id, student_id)
-		answer =  self.model.objects.filter(solve_info_id = solve_info_id, question_id = question_id).values('answer')
+	def get_stud_open_answer_text(self, solve_info_id, question_id):
 
-		if not answer:
-			answer = []
-		else:
-			answer = answer[0]['answer']
-		return answer
+		if solve_info_id > 0:
+			answer =  self.model.objects.filter(solve_info_id = solve_info_id, question_id = question_id).values('answer')
+			return answer
+
+	def update_answer_points(self,solve_info_id, question_id, quiz_id, student_id, points):
+
+		if solve_info_id > 0:
+			quiz_solve = self.model.objects.get(solve_info_id = solve_info_id, question_id = question_id)
+			quiz_solve.points = points
+			quiz_solve.save()

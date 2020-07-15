@@ -39,4 +39,27 @@
     word-wrap: break-word;
 }
 
+#horizontal {
+    position: fixed;
+    width: 45px;
+    background: #f2f2f2;
+    left: 0;
+    top: 150px;
+	border-radius: 15px;
+	writing-mode: vertical-rl; 
+	font-family: 'Lato'
+}
 
+
+#timer {
+	margin-right: 5px;
+}
+
+.cut-text + .tooltip > .tooltip-inner {
+	background-color: #cccccc; color: black;
+}
+
+.check {
+	margin-left: 35px;
+	
+}

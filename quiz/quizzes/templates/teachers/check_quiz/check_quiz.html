@@ -1,13 +1,7 @@
 {% extends 'base.html' %}
 
 {% block body_block %}
-  <head>
 
-    {% load static %}
-
-    <script src="{% static 'js/block_buttons.js' %}"></script> 
-
-  </head>
  <body oncontextmenu="return false;">
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
@@ -16,7 +10,8 @@
   </nav>
       <!-- Modal -->
    
-  <h2 class="mb-3">Quiz</h2> <br>
+  <h2 class="mb-3">Quiz (name) </h2>
+  <h3 class="mb-3">student name here</h3> <br>
   <div class="card">
 
 
@@ -28,19 +23,23 @@
        
             <div id="{{question_id}}"> 
                 <div class="form-group">
-                    <label for="stud_answer">Student's answer</label>
-                    <textarea class="form-control" rows="3" disabled>{{answer.stud_answer}}</textarea>
-                    <div class="form-group ">
-                      <label for="disabledInput" class="col-sm-2 control-label"></label>
-                      <br>
-                      
-                      <div class="col-sm-2 " style="  float: right; clear: both;">
-                        <label for="stud_answer">Points</label>
-                        <label for="stud_answer">( {{answer.points}} )</label>
-                        <input class="form-control" id="stud_answer" type="text" value="0" name="{{answer.id}}">
-                      </div>
-                      <br>
-                    </div>
+                    {% if answer.exist %}
+                        <label for="stud_answer">Student's answer</label>
+                        <textarea class="form-control" rows="3" disabled>{{answer.stud_answer}}</textarea>
+                        <div class="form-group ">
+                          <label for="disabledInput" class="col-sm-2 control-label"></label>
+                          <br>
+                          
+                          <div class="col-sm-2 " style="  float: right; clear: both;">
+                            <label for="stud_answer">Points</label>
+                            <label for="stud_answer">( {{answer.points}} )</label>
+                            <input class="form-control allownumericwithdecimal check_max" id="stud_answer" max = "{{answer.points}}" type="number" value="0" name="{{answer.id}}">
+                          </div>
+                          <br>
+                        </div>
+                    {%else%}
+                        <label for="stud_answer">Answer didn't exist when student solved quiz</label>
+                    {% endif %}
                 </div>
                 <br>
             </div>
@@ -59,25 +58,38 @@
 {% csrf_token %}
 
 <script>
-    window.onbeforeunload = function() { return "Your work will be lost."; };
+    
     $( "form" ).submit(function( event ) {
+        $(this).find('input[type="submit"]').attr('disabled','disabled');
         dataa =  $( this ).serializeArray();
         console.log(dataa)
         event.preventDefault();
         $.ajax({
-            type: 'POST',
-            url: '',
+            type: 'POST', 
+            url: '{% url "teachers:save_checked_answers" quiz_id student_id %}',
 
             data: {"data" : JSON.stringify(dataa)},
             dataType: 'json',
             success: function (data) {
-                //window.location.href="students/course/joined/";
-                // window.location.href = data.url;
-                //window.location('/students/')
+                window.location.href = data.url;
             }
         });
     });
 
+    $(".allownumericwithdecimal").on("keypress keyup blur",function (event) {
+    $(this).val($(this).val().replace(/[^0-9\.]/g,''));
+        if ((event.which != 46 || $(this).val().indexOf('.') != -1) && (event.which < 48 || event.which > 57)) {
+            event.preventDefault();
+        }
+    });
+
+    $( ".check_max" ).change(function() {
+        var val = $(this).val()
+        var max_val =  $(this).attr('max')
+        if (val > max_val){
+            $(this).val(max_val)
+        }   
+    });
 </script>
 {% endblock javascript %}
 {% endblock %}

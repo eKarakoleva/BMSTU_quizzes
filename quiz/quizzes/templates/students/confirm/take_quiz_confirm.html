@@ -13,17 +13,31 @@
   </nav>
   <h2 class="mb-3">Confirm action</h2>
   
-  <p class="lead">Are you sure you want to start quiz <strong>{{q.name}}</strong>?<br> If you start, there is no going back!</p>
+  <p class="lead">Are you sure you want to start quiz <strong>"{{q.name}}"</strong>?<br> If you start, there is no going back!</p>
 <div class="card">
   <ul class="list-group list-group-flush">
     <li class="list-group-item"><text class = "card-text"><h4 class="card-title">Quiz name</h4><p>{{q.name}}</p></text></li>
     <li class="list-group-item"><h4 class="card-title">Description</h4> <p class = "card-text">{{q.description}}</p></li>
     <li class="list-group-item"><h4 class="card-title">Max points</h4><p class = "card-text"> {{q.max_points}}</p></li>
+    {% if q.timer_minutes != 0%}
+      <li class="list-group-item"><h4 class="card-title">Minutes</h4><p class = "card-text"> {{q.timer_minutes}}</p></li>
+      {% if minutes_left <= q.timer_minutes %}
+        <li class="list-group-item"><h4 class="card-title">Minutes left</h4><p class = "card-text"> {{minutes_left}}</p></li>
+      {% else %}
+        <li class="list-group-item"><h4 class="card-title">Minutes left</h4><p class = "card-text"> NONE </p></li>
+      {% endif %} 
+    {% else %}
+      <li class="list-group-item"><h4 class="card-title">Minutes</h4><p class = "card-text"> ∞</p></li>
+      <li class="list-group-item"><h4 class="card-title">Minutes left</h4><p class = "card-text"> ∞</p></li>
+    {% endif %}
+
   </ul>
 </div>
-
-    <a href="{% url 'students:take_quiz' q.id %}" class="btn btn-success btn-lg">Yes, I'm sure</a>
-    <a href="{% url 'students:view_course_active_quizzes' course_id %}" class="btn btn-outline-secondary btn-lg" role="button">Nevermind</a>
+    {% if minutes_left <= q.timer_minutes %}
+      <a href="{% url 'students:take_quiz' q.id %}" class="btn btn-success btn-lg">Yes, I'm sure</a>
+    {% else %}
+      <a href="{% url 'students:view_course_active_quizzes' course_id %}" class="btn btn-danger btn-lg">Sorry, your time is over! Click to go back.</a>
+    {% endif %}
   {% endfor %}
  
 {% endblock %}

@@ -5,7 +5,8 @@
 
 	{% load static %}
 
-	<script src="{% static 'js/block_buttons.js' %}"></script> 
+	<script src="{% static 'js/block_buttons.js' %}"></script>
+	<script src="{% static 'js/solve_quiz.js' %}"></script>  
 
   </head>
  <body oncontextmenu="return false;">
@@ -77,40 +78,18 @@
 			}
 		});
 	}
-
+	
+	var submitted = 0;
 	$( "form" ).submit(function( event ) {
 		$(this).find('input[type="submit"]').attr('disabled','disabled');
 		user_data =  $( this ).serializeArray();
 		event.preventDefault();
+		submitted = 1
 		ajax_send(user_data)
 	});
 
-
-
 	var minutes_left = "{{minutes_left}}"
 	var timer_app = "{{timer}}"
-	function startTimer(duration, display) {
-		var timer = duration, minutes, seconds, hours;
-		var x = setInterval(function () {
-			hours = (timer / 3600) | 0;
-			minutes = ((timer % 3600) / 60) | 0;
-			seconds = (timer % 60) | 0;
-			
-			hours = hours < 10 ? "0" + hours : hours;
-			minutes = minutes < 10 ? "0" + minutes : minutes;
-			seconds = seconds < 10 ? "0" + seconds : seconds;
-
-			display.textContent = hours + ":" + minutes + ":" + seconds;
-
-			if (--timer < 0) {
-				clearInterval(x);
-				document.getElementById("timer").innerHTML = "Time is over!";
-				$("form").find('input[type="submit"]').attr('disabled','disabled');
-				user_data =  $( "form" ).serializeArray();
-				ajax_send(user_data)
-			}
-		}, 1000);
-	}
 
 	if (timer_app != 0) {
 		window.onload = function () {
@@ -124,6 +103,8 @@
 		document.getElementById("timer").innerHTML = "∞"
 	}
 
+	var quiz_id = "{{quiz_id}}"
+	localAnswerSave(quiz_id)
 
 	var menu_height = $(".menu-container").height()
 	var plus_h = $(".check").position()['top'] - menu_height

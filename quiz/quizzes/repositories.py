@@ -86,6 +86,14 @@ class CourseRepository(object):
 	def __init__(self, model):
 		self.model = model
 
+	def get_name(self, course_id):
+		name = self.model.objects.filter(id = course_id).values('name')
+		if not name:
+			name = "NONE"
+		else:
+			name = name[0]['name']
+		return name
+
 	def get_all_active(self):
 		return self.model.objects.filter(is_active=True)
 

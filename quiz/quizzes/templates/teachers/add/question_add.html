@@ -17,6 +17,6 @@
     {{ form|crispy }}
     <h4 class="mb-3">Avaliable points: {{free_points}}</h4>
     <button type="submit" class="btn btn-success">Save</button>
-    <a  href="" class="btn btn-outline-secondary" role="button">NevermindTODO</a>
+    <a  href="{% url 'teachers:questions_list' quiz_id %}" class="btn btn-outline-secondary" role="button">Nevermind</a>
   </form>
 {% endblock %}

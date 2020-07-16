@@ -7,6 +7,10 @@
       <li class="breadcrumb-item active" aria-current="page">{{course_name}} </li>
     </ol>
   </nav>
+    <a href="{% url 'students:course_joined_courses' %}" class="btn btn-info">
+      <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+       Go back
+    </a>
         <!-- Modal -->
     <div class="modal fade" id="modal-view" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
       <div class="modal-dialog modal-lg">
@@ -17,6 +21,7 @@
     </div><!-- /.modal -->
    <br>
    <br>
+
   <div class="card">
     <table class="table mb-0" id="my_quizzes">
       <thead>

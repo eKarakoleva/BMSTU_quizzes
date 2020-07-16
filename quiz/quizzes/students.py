@@ -128,6 +128,10 @@ def take_quiz(request, pk):
 
 	time_delta = time_delta.seconds / 60
 	quiz_name =qr.get_name(pk)
+
+	if time_delta > timer:
+		raise Http404 #TODO page time is end
+
 	return render(request, 'students/quiz_solve.html', {'tests': test, 'quiz_id': pk, 'timer': timer, 'minutes_left': time_delta, 'quiz_name': quiz_name})
 
 def view_course_active_quizzes(request, pk):

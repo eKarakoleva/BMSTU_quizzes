@@ -68,10 +68,10 @@ def view_course_quizzes(request, pk):
 	quiz = repo.QuizRepository(Quiz)
 	quizzes = quiz.get_by_user_course(request.user, pk)
 	courses = repo.CourseRepository(Course)
-	q_course = Course.objects.get(id = pk)
+	course_name = courses.get_name(pk)
 	owner_id = courses.get_owner_id(pk)
 	if(request.user.id == owner_id):
-		return render(request, 'teachers/lists/quiz_list.html', {'quizzes': quizzes, 'course': q_course})
+		return render(request, 'teachers/lists/quiz_list.html', {'quizzes': quizzes, 'course_id': pk, 'course_name': course_name})
 	raise Http404
 
 @method_decorator([login_required, teacher_required], name='dispatch')
@@ -319,11 +319,11 @@ def view_question_info(request, pk, template_name='teachers/info/question_info.h
 @login_required
 @teacher_required
 def question_add(request, pk):
-	quiz = repo.QuizRepository(Quiz)
+	quiz= get_object_or_404(Quiz, pk=pk)
 	questionR = repo.QuestionRepository(Questions)
-	quiz_points = quiz.get_quiz_points(pk)
-	owner_id = quiz.get_owner_id(pk)
-	is_active = quiz.is_active(pk)
+	quiz_points = quiz.max_points
+	owner_id = quiz.owner_id
+	is_active = quiz.is_active
 	sum_questions_points = questionR.sum_all_quiz_questions_points(pk)
 
 	free_points = quiz_points - sum_questions_points
@@ -344,7 +344,7 @@ def question_add(request, pk):
 
 		else:
 			form = QuestionForm()
-		return render(request, 'teachers/add/question_add.html', {'form': form, 'free_points': free_points})
+		return render(request, 'teachers/add/question_add.html', {'form': form, 'free_points': free_points, 'quiz_id': quiz.id})
 	raise Http404
 
 @login_required

@@ -57,6 +57,9 @@ urlpatterns = [
        path('course/quiz/<int:pk>/answers/check/student/<int:spk>/', get_answers_for_check, name = "get_answers_for_check"),
        path('course/quiz/<int:pk>/answers/check/student/<int:spk>/finish/', save_checked_answers, name = "save_checked_answers"),
        path('course/quiz/<int:pk>/grades/', view_students_quiz_grades, name = "view_students_quiz_grades"),
+       path('course/quiz/<int:pk>/preview/', quiz_preview, name = "quiz_preview"),
+       path('course/quiz/<int:pk>/student/<int:spk>/view/', student_quiz_view, name = "student_quiz_view"),
+
       
     ], 'quizzes'), namespace='teachers')),
 
@@ -69,6 +72,7 @@ urlpatterns = [
        path('course/<int:pk>/quizzes/', view_course_active_quizzes, name = "view_course_active_quizzes"),
        path('course/quiz/<int:pk>/finish/', finish_test, name = "finish_test"),
        path('course/quiz/<int:pk>/view/', student_view_quiz_info, name = "student_view_quiz_info"),
+       path('course/quiz/<int:pk>/graded/view/', graded_quiz_view, name = "graded_quiz_view"),
        
     ], 'quizzes'), namespace='students')),
 ]

@@ -16,7 +16,7 @@ from django.db import connection
 from django.contrib import messages
 from django import forms
 
-from quizzes.helper import check_grades, generate_code, open_answers_for_check
+from quizzes.helper import check_grades, generate_code, open_answers_for_check, construct_quiz_teacher, construct_quiz_student_results
 from quizzes.decorators import teacher_required
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 import json
@@ -139,18 +139,8 @@ class ActivateDeactivateCourse(UpdateView):
 				'activated': True
 			}
 			return JsonResponse(data)
-#?????????
-@method_decorator([login_required, teacher_required], name='dispatch')
-class QuizListView(ListView,):
-	model = Course
-	ordering = ('name', )
-	context_object_name = 'quizzes'
-	template_name = 'teachers/lists/quiz_list.html'
 
-	def get_queryset(self):
-		return get_by_user_course__course(self, self.request.user, self.request.GET.get('course_id'))
 
-#@method_decorator([login_required], name='dispatch')
 @login_required
 @teacher_required
 def quiz_add(request, pk):
@@ -255,7 +245,9 @@ class DeactivateQuiz(UpdateView):
 def activate_quiz(request, pk, template_name='teachers/activate/activate_quiz.html'):
 	quiz= get_object_or_404(Quiz, pk=pk)
 	quizR = repo.QuizRepository(Quiz)
-	owner_id = quizR.get_owner_id(pk)
+	#owner_id = quizR.get_owner_id(pk)
+	owner_id = quiz.owner_id
+	
 	if request.user.id == owner_id:
 		is_course_active = quizR.is_course_active(pk)
 		form = QuizActivateForm(request.POST or None, instance=quiz)
@@ -300,7 +292,11 @@ def view_quiz_questions(request, pk):
 	quiz = repo.QuizRepository(Quiz)
 	quizzes = quiz.get_by_id(pk)
 	course_id = quiz.get_course_id(pk)
-	owner_id = quizzes[0].owner_id
+	if quizzes:
+		owner_id = quizzes[0].owner_id
+	else:
+		owner_id = 0
+
 	if request.user.id == owner_id:
 		return render(request, 'teachers/lists/questions_list.html', {'questions': questions, 'quiz': pk, 'quizzes': quizzes, 'quiz_is_active': quizzes[0].is_active, 'course_id': course_id})
 	raise Http404
@@ -308,7 +304,7 @@ def view_quiz_questions(request, pk):
 @login_required
 @teacher_required
 def view_question_info(request, pk, template_name='teachers/info/question_info.html'):
-	question= get_object_or_404(Questions, pk=pk)
+	#question= get_object_or_404(Questions, pk=pk)
 	questionR = repo.QuestionRepository(Questions)
 	owner_id = questionR.get_owner_id(pk)
 	questions = questionR.get_by_id(pk)
@@ -414,7 +410,10 @@ def AnswersView(request, qpk):
 	quiz_is_active = questions.get_quiz_status(qpk)
 	quiz_id = questions.get_quiz_id(qpk)
 
-	qtype = question[0].qtype
+	if question:
+		qtype = question[0].qtype
+	else:
+		qtype = "NONE"
 	if request.user.id == owner_id and qtype != 'open':
 		return render(request, "teachers/lists/answers_list.html", {"form": form, "answers": answers, "question_id": qpk, "question": question, 'quiz_is_active': quiz_is_active, 'quiz_id': quiz_id})
 	raise Http404
@@ -633,3 +632,32 @@ def view_students_quiz_grades(request, pk):
 
 		return render(request, 'teachers/lists/students_grade_list.html', {'quizzes': quizzes, 'course_id': course_id, 'min_points': min_points, 'good_points': good_points, 'max_points': max_points})
 	raise Http404
+
+
+@login_required
+@teacher_required
+def quiz_preview(request, pk):
+	qr = repo.QuizRepository(Quiz)
+	owner_id = qr.get_owner_id(pk)
+	if request.user.id == owner_id:
+		test = construct_quiz_teacher(pk)
+		quiz_name =qr.get_name(pk)
+		course_id = qr.get_course_id(pk)
+		return render(request, 'teachers/view/quiz_preview.html', {'tests': test, 'quiz_name': quiz_name, 'course_id': course_id})
+	else:
+		raise Http404
+
+def student_quiz_view(request, pk, spk):
+	qr = repo.QuizRepository(Quiz)
+	owner_id = qr.get_owner_id(pk)
+	if request.user.id == owner_id:
+		cpr = repo.CourseParticipantsRepository(CourseParticipants)
+		is_in_joined_courses = cpr.is_quiz_in_joined_courses(pk, spk)
+		if not is_in_joined_courses:
+			raise Http404
+
+		test = construct_quiz_student_results(pk, spk)
+		quiz_name =qr.get_name(pk)
+		return render(request, 'teachers/view/student_quiz_view.html', {'tests': test, 'quiz_name': quiz_name, 'quiz_id': pk})
+	raise Http404
+

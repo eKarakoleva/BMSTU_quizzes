@@ -24,6 +24,7 @@
           <th>Last Name</th>
           <th>Cafedra</th>
           <th>Points</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -42,6 +43,9 @@
                     <td class="align-middle" title="{{ quiz.points }}"><span class="label label-danger">{{quiz.points}}</span></td>
                 {% endif %}
               {% endif %}
+
+              <td class="align-middle"><a href="{% url 'teachers:student_quiz_view' quiz.quiz_id quiz.stud_id%}" class="btn btn-info">View</a></td>
+
             
           </tr>
         {% empty %}
@@ -54,6 +58,7 @@
             <td class="align-middle"></td>
             <td class="align-middle"></td>
             <td class="align-middle"></td>
+            <td class="text-right"></td>
             <td class="text-right"></td>
           </tr>
       </tbody>

@@ -4,7 +4,7 @@ import numpy as np
 import re
 
 import quizzes.repositories as repo
-from quizzes.models import Cafedra, User, Course, CourseParticipants, Quiz, Questions, Answers, StudentOpenAnswers, QuizSolveRecord
+from quizzes.models import Cafedra, User, Course, CourseParticipants, Quiz, Questions, Answers, StudentOpenAnswers, QuizSolveRecord, StudentAnswers
 
 def generate_code(lettersCount = 4, digitsCount = 2):
 	sampleStr = ''.join((random.choice(string.ascii_letters) for i in range(lettersCount)))
@@ -46,6 +46,84 @@ def construct_quiz(quiz_id):
 		
 		quiz.update(temp)
 	return quiz
+
+def construct_quiz_teacher(quiz_id):
+	quesrtr = repo.QuestionRepository(Questions)
+	ar = repo.AnswerRepository(Answers)
+
+	questions = quesrtr.get_by_quiz_id(quiz_id)
+
+	quiz = {}
+
+	for question in questions:
+		temp = {}
+		temp[question.id] = {}
+		temp[question.id]['qname'] = question.name
+		temp[question.id]['qtype'] = question.qtype
+		temp[question.id]['points'] = question.points
+		temp[question.id]['answers'] = {}
+
+		if question.qtype != 'open':
+			answers = ar.get_answer_points_and_name_by_question(question.id)
+			for answer in answers:
+				temp[question.id]['answers'][answer.id] = {}
+				temp[question.id]['answers'][answer.id]['answer'] = answer.name
+				temp[question.id]['answers'][answer.id]['points'] = answer.points
+				temp[question.id]['answers'][answer.id]['correct'] = answer.correct
+		
+		quiz.update(temp)
+	return quiz
+
+def construct_quiz_student_results(quiz_id, student_id):
+
+	qsrr = repo.QuizSolveRecordRepository(QuizSolveRecord)
+	solve_info_id = qsrr.get_solve_info_id(quiz_id, student_id)
+
+	if solve_info_id != 0:
+		sar = repo.StudentAnswersRepository(StudentAnswers)
+		stud_answers = sar.get_student_answers(solve_info_id)
+		quesrtr = repo.QuestionRepository(Questions)
+		ar = repo.AnswerRepository(Answers)
+		answers_id = [ sub['answer_id'] for sub in stud_answers ] 
+		
+		questions = quesrtr.get_by_quiz_id(quiz_id)
+
+		soar = repo.StudentOpenAnswersRepository(StudentOpenAnswers)
+
+		quiz = {}
+
+		for question in questions:
+			temp = {}
+			temp[question.id] = {}
+			temp[question.id]['qname'] = question.name
+			temp[question.id]['qtype'] = question.qtype
+			temp[question.id]['points'] = question.points
+			temp[question.id]['answers'] = {}
+
+
+			if question.qtype != 'open' and question.qtype != 'compare':
+				answers = ar.get_answer_points_and_name_by_question(question.id)
+				for answer in answers:
+					temp[question.id]['answers'][answer.id] = {}
+					temp[question.id]['answers'][answer.id]['answer'] = answer.name
+					temp[question.id]['answers'][answer.id]['points'] = answer.points
+					temp[question.id]['answers'][answer.id]['correct'] = answer.correct
+					if answer.id in answers_id:
+						temp[question.id]['answers'][answer.id]['is_answer'] = True
+					else:
+						temp[question.id]['answers'][answer.id]['is_answer'] = False
+			else:
+				open_student_answers = soar.get_student_answers(solve_info_id, question.id)
+				temp[question.id]['answers']['answer'] = ""
+				temp[question.id]['answers']['points'] = 0
+				if open_student_answers != -1:
+					temp[question.id]['answers']['answer'] = open_student_answers['answer']
+					temp[question.id]['answers']['points'] = open_student_answers['points']
+
+			quiz.update(temp)
+		return quiz
+	else:
+		return -1
 
 def open_answers_for_check(quiz_id, stud_id):
 	quesrtr = repo.QuestionRepository(Questions)

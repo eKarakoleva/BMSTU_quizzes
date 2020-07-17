@@ -81,6 +81,7 @@ def take_quiz_confirm(request, pk):
 	if not is_in_joined_courses:
 		raise Http404
 
+	minutes_left = 0
 	if quiz:
 		if is_started:
 			timer = quiz[0].timer_minutes
@@ -129,7 +130,7 @@ def take_quiz(request, pk):
 	time_delta = time_delta.seconds / 60
 	quiz_name =qr.get_name(pk)
 
-	if time_delta > timer:
+	if time_delta > timer and timer != 0:
 		raise Http404 #TODO page time is end
 
 	return render(request, 'students/quiz_solve.html', {'tests': test, 'quiz_id': pk, 'timer': timer, 'minutes_left': time_delta, 'quiz_name': quiz_name})
@@ -138,7 +139,7 @@ def view_course_active_quizzes(request, pk):
 	quiz = repo.QuizRepository(Quiz)
 	quizzes = quiz.get_active_quizzes_student_info(pk, request.user.id)
 	if not quizzes:
-		course_name = "NONE"
+		raise Http404
 	else:
 		course_name = quizzes[0].course
 
@@ -200,3 +201,16 @@ def student_view_quiz_info(request, pk, template_name='students/quiz_info.html')
 	quizzes = quizzesR.get_by_id(pk)
 	return render(request, template_name, {'id': pk, 'quizzes': quizzes})
 
+
+def graded_quiz_view(request, pk):
+	qr = repo.QuizRepository(Quiz)
+
+	cpr = repo.CourseParticipantsRepository(CourseParticipants)
+	is_in_joined_courses = cpr.is_quiz_in_joined_courses(pk, request.user.id)
+	if not is_in_joined_courses:
+		raise Http404
+
+	test = helper.construct_quiz_student_results(pk, request.user.id)
+	quiz_name =qr.get_name(pk)
+	course_id = qr.get_course_id(pk)
+	return render(request, 'teachers/view/student_quiz_view.html', {'tests': test, 'quiz_name': quiz_name, 'quiz_id': pk, 'course_id': course_id})

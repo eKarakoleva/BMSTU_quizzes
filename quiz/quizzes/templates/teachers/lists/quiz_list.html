@@ -51,7 +51,7 @@
    <br>
   <a href="{% url 'teachers:quiz_add' course_id %}" class="btn btn-primary delete mb-3" role="button">Add Quiz</a>
   <div class="card">
-    <table class="table mb-0" id="my_quizzes">
+    <table class="table table-sm" id="my_quizzes">
       <thead>
         <tr>
           <th>Quiz</th>
@@ -88,10 +88,13 @@
                         <li><a href="{% url 'teachers:view_quiz_for_check' quiz.id %}">Check quizzes</a></li>
                         <li><a href="{% url 'teachers:view_students_quiz_grades' quiz.id %}">View grades</a></li>
                     </ul>
+    
                 
                 <a class="btn btn-danger" id="mod_but" data = {{quiz.id}} data-toggle="modal" href="{% url 'teachers:update_in_code' quiz.id %}" 
                 data-target="#modal-code" title="edit item" data-tooltip >New in code</a> 
+                
               {% endif %}
+              <a class="btn btn-primary" href="{% url 'teachers:quiz_preview' quiz.id %}">Preview</a>
             </td>
           </tr>
         {% empty %}

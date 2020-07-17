@@ -17,7 +17,12 @@ class QuizRepository(object):
 		return self.model.objects.filter(id = q_id)
 
 	def get_owner_id(self, q_id):
-		return self.model.objects.only('owner_id').get(id=q_id).owner_id
+		oid = self.model.objects.filter(id = q_id).values('owner_id')
+		if not oid:
+			oid = 0
+		else:
+			oid = oid[0]['owner_id']
+		return oid
 
 	def get_name(self, quiz_id):
 		return self.model.objects.only('name').get(id=quiz_id).name
@@ -32,7 +37,12 @@ class QuizRepository(object):
 		return points
 
 	def get_course_id(self, quizpk):
-		return self.model.objects.only('course_id').get(id=quizpk).course_id
+		cid= self.model.objects.filter(id=quizpk).values('course_id')
+		if not cid:
+			cid = 0
+		else:
+			cid = cid[0]['course_id']
+		return cid
 
 	def get_quiz_points(self, quizpk):
 		return self.model.objects.only('max_points').get(id=quizpk).max_points
@@ -53,16 +63,18 @@ class QuizRepository(object):
 		quiz_student_info = QuizSolveRecord.objects.filter(student_id=student_id)
 		all_course_quizzes = self.model.objects.filter(course_id = course_id, is_active=True).select_related('course')
 
-		for quiz in all_course_quizzes:
-			quiz.sis_fully_checked = None
-			quiz.spoints = 0
-			quiz.is_started = False
-			for qsi in quiz_student_info:
-				if quiz.id == qsi.quiz_id:
-					quiz.spoints = qsi.points
-					quiz.sis_fully_checked = qsi.is_fully_checked
-					quiz.is_started = True
-					#quiz.student.time_end = qsi.time_end
+		if all_course_quizzes:
+			for quiz in all_course_quizzes:
+				quiz.sis_fully_checked = None
+				quiz.spoints = 0
+				quiz.is_started = False
+				for qsi in quiz_student_info:
+					if quiz.id == qsi.quiz_id:
+						quiz.spoints = qsi.points
+						quiz.sis_fully_checked = qsi.is_fully_checked
+						quiz.is_started = True
+						#quiz.student.time_end = qsi.time_end
+
 		return all_course_quizzes
 		
 	def get_point_schedule(self, quizpk):
@@ -104,7 +116,12 @@ class CourseRepository(object):
 		 return self.model.objects.filter(id = course_id)
 
 	def get_owner_id(self, c_id):
-		return self.model.objects.only('owner_id').get(id=c_id).owner_id
+		oid = self.model.objects.filter(id = c_id).values('owner_id')
+		if not oid:
+			oid = 0
+		else:
+			oid = oid[0]['owner_id']
+		return oid
 
 	def course_delete(self, cpk):
 		return self.model.objects.get(id=cpk).delete()
@@ -146,12 +163,21 @@ class QuestionRepository(object):
 	def get_id_and_type(self, quiz_id):
 		return self.model.objects.filter(quiz_id = quiz_id).only("id", "qtype").order_by('-id').reverse()
 
-
 	def get_owner_id(self, question_id):
-		return self.model.objects.filter(id=question_id).select_related('quiz').values('quiz__owner_id')[0]['quiz__owner_id']
+		owner_id = self.model.objects.filter(id=question_id).select_related('quiz').values('quiz__owner_id')
+		if owner_id:
+			owner_id = owner_id[0]['quiz__owner_id']
+		else:
+			owner_id = 0
+		return owner_id
 
 	def get_quiz_status(self, question_id):
-		return self.model.objects.filter(id=question_id).select_related('quiz').values('quiz__is_active')[0]['quiz__is_active']
+		status = self.model.objects.filter(id=question_id).select_related('quiz').values('quiz__is_active')
+		if status:
+			status = status[0]['quiz__is_active']
+		else:
+			status = 0
+		return status
 
 	def question_delete(self, qpk):
 		return self.model.objects.get(id=qpk).delete()
@@ -163,10 +189,20 @@ class QuestionRepository(object):
 		return points
 
 	def get_quiz_id(self, question_id):
-		return self.model.objects.only('quiz_id').get(id=question_id).quiz_id
+		qid = self.model.objects.filter(id=question_id).values('quiz_id')
+		if qid.exists():
+			qid = qid[0]['quiz_id']
+		else:
+			qid = 0
+		return qid
 
 	def get_quiz_points(self, question_id):
-		return self.model.objects.filter(id=question_id).select_related('quiz').values('quiz__max_points')[0]['quiz__max_points']
+		max_points = self.model.objects.filter(id=question_id).select_related('quiz').values('quiz__max_points')
+		if max_points:
+			max_points = max_points[0]['quiz__max_points']
+		else:
+			max_points = 0
+		return max_points
 
 	def get_question_points(self, question_id):
 		return self.model.objects.only('points').get(id=question_id).points
@@ -297,9 +333,11 @@ class QuizSolveRecordRepository(object):
 		return ret
 
 	def get_solve_info_id(self, quiz_id, student_id):
-		solve_id = self.model.objects.only('id').get(quiz_id=quiz_id, student_id=student_id).id
+		solve_id = self.model.objects.filter(quiz_id=quiz_id, student_id=student_id).values('id')
 		if(not solve_id):
 			solve_id = 0
+		else:
+			solve_id = solve_id[0]['id']
 		return solve_id
 
 	def finish_quiz(self, quiz_id, student_id, points, is_fully_checked):
@@ -381,7 +419,11 @@ class StudentAnswersRepository(object):
 		return self.model.objects.create(
 				solve_info_id= solve_info, 
 				question_id = question_id, 
-				answer_id = answer_id)	
+				answer_id = answer_id)
+
+	def get_student_answers(self, solve_id):
+		answer =  self.model.objects.filter(solve_info_id = solve_id).values('answer_id')
+		return answer
 
 class StudentOpenAnswersRepository(object):
 	def __init__(self, model):
@@ -406,3 +448,11 @@ class StudentOpenAnswersRepository(object):
 			quiz_solve = self.model.objects.get(solve_info_id = solve_info_id, question_id = question_id)
 			quiz_solve.points = points
 			quiz_solve.save()
+
+	def get_student_answers(self, solve_id, question_id):
+		answer =  self.model.objects.filter(solve_info_id = solve_id, question_id = question_id).values('answer', 'points')
+		if answer:
+			answer = answer[0]
+		else:
+			answer = -1
+		return answer

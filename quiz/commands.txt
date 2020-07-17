@@ -17,3 +17,44 @@ pip install numpy
 
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<tr id="quiz-{{quiz.id}}">             
+            <td class="align-middle"><a id="mod_but" data = {{quiz.id}} data-toggle="modal" href = "{% url 'teachers:view_quiz' quiz.id %}" data-target="#modal-view" class = "cut-text" title="{{ quiz.name }}">{{ quiz.name }}</a></td>
+
+      			<td class="align-middle">{{ quiz.course }}</td>
+            {% if quiz.is_active == True %}
+             <td class="align-middle"><a class="btn btn-success" onClick="deactivateQuiz({{quiz.id}})">Deactivate</a></td>
+            {% else %}
+             <td class="align-middle"><a class="btn btn-danger" id="is_active-{{quiz.id}}" name = "{{quiz.id}}" data-toggle="modal" href="{% url 'teachers:activate_quiz' quiz.id %}" data-target="#modal-activate" title="edit item" data-tooltip>Activate</a></td>
+
+            {% endif%}
+            <td class="align-middle add">{{quiz.max_points}}</td>
+            <td class="text-right">
+              <a href="{% url 'teachers:questions_list' quiz.id %}" class="btn btn-primary">Questions</a>
+              {% if quiz.is_active == False%}
+                <a class="btn btn-info" id="mod_but" data = {{quiz.id}} data-toggle="modal" href="{% url 'teachers:update_quiz' quiz.id %}" 
+                data-target="#modal" title="edit item" data-tooltip >Update</a> 
+                <a class="btn btn-danger" onClick="deleteQuiz({{quiz.id}})">Delete</a>
+              {% else %}
+
+                    <button class="btn btn-info dropdown-toggle" type="button" data-toggle="dropdown">Students
+                    <span class="caret"></span></button>
+                    <ul class="dropdown-menu">
+                        <li><a href="{% url 'teachers:view_quiz_for_check' quiz.id %}">Check quizzes</a></li>
+                        <li><a href="{% url 'teachers:view_students_quiz_grades' quiz.id %}">View grades</a></li>
+                    </ul>
+                
+                <a class="btn btn-danger" id="mod_but" data = {{quiz.id}} data-toggle="modal" href="{% url 'teachers:update_in_code' quiz.id %}" 
+                data-target="#modal-code" title="edit item" data-tooltip >New in code</a> 
+              {% endif %}
+            </td>
+          </tr>
+
+
+
+.cut-text{
+  display: block;
+  white-space: nowrap;
+  width: 12em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

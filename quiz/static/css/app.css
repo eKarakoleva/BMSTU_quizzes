@@ -28,10 +28,12 @@
 .cut-text{
   display: block;
   white-space: nowrap;
-  width: 12em;
+  width: 10em;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
 }
+
 .card {
     max-width: 100%;
 }
@@ -63,3 +65,4 @@
 	margin-left: 35px;
 	
 }
+

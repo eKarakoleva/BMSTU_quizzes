@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block body_block %}
+  <head>
+
+	{% load static %}
+
+	<script src="{% static 'js/block_buttons.js' %}"></script>
+	<script src="{% static 'js/solve_quiz.js' %}"></script>  
+
+  </head>
+ <body oncontextmenu="return false;">
+  <nav aria-label="breadcrumb">
+	<ol class="breadcrumb">
+	  <li class="breadcrumb-item active" aria-current="page">My Courses </li>
+	</ol>
+  </nav>
+	  <!-- Modal -->
+	{% if request.user.is_teacher%}
+		<a href="{% url 'teachers:view_students_quiz_grades' quiz_id %}" class="btn btn-info"><span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span> Go back</a>
+	{% endif %}
+	{% if request.user.is_student%}
+		<a href="{% url 'students:view_course_active_quizzes' course_id %}" class="btn btn-info"><span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span> Go back</a>
+	{% endif %}
+  <h2 class="mb-3 check">{{quiz_name}}</h2> <br>
+  <div class="card">
+		<form method="post">{% csrf_token %}
+			<ol>
+			  {% for question_id, qinfo in tests.items %}
+				
+				  <li style="font-size:19px"> <h3> {{qinfo.qname}} </h3> </li>
+				  <h4> Max points: {{qinfo.points}} points</h4>
+				 
+			   
+					<div id="{{question_id}}"> 
+						<ul class="list-group">
+						   {% for id_ans, answer in qinfo.answers.items %}
+							
+								{% if qinfo.qtype == 'multiple'%}
+									{% if answer.is_answer == True%}
+										{% if answer.correct == True%}
+											<li class="list-group-item" style="background-color: #99ff99"><input type="checkbox" class="answer" name="{{question_id}}" value="{{id_ans}}" checked> {{answer.answer}}  -  <strong>{{answer.points}} points</strong></li>
+										{% else %}
+											<li class="list-group-item" style="background-color: #ff3333"><input type="checkbox" class="answer" name="{{question_id}}" value="{{id_ans}}" checked> {{answer.answer}}  -  <strong>{{answer.points}} points</strong></li>
+										{% endif %}
+									{% else %}
+										<li class="list-group-item"><input type="checkbox" class="answer" name="{{question_id}}" value="{{id_ans}}"> {{answer.answer}} </li>
+									{% endif %}	
+								{% endif %}
+
+								{% if qinfo.qtype == 'single' %}
+									{% if answer.is_answer == True%}
+										{% if answer.correct == True%}
+											<li class="list-group-item" style="background-color: #99ff99"><input type="radio" class="answer" name="{{question_id}}" value="{{id_ans}}" checked> {{answer.answer}}  -  <strong>{{answer.points}} points</strong></li>
+										{% else %}
+											<li class="list-group-item" style="background-color: #ff3333"><input type="radio" class="answer" name="{{question_id}}" value="{{id_ans}}" checked> {{answer.answer}}  -  <strong>{{answer.points}} points</strong></li>
+										{% endif %}	
+									{%else%}
+										<li class="list-group-item"><input type="radio" class="answer" name="{{question_id}}" value="{{id_ans}}"> {{answer.answer}}</li>
+									{%endif%} 
+								{%endif%} 
+
+		
+										  
+							{% endfor %}
+						</ul> 
+							{% if qinfo.qtype == 'open' or qinfo.qtype == 'compare'%}
+								<textarea class="form-control" rows="3" disabled>{{qinfo.answers.answer}}</textarea>
+								<li class="list-group-item"> <strong> {{qinfo.answers.points}} points</strong></li>
+							{% endif %}
+						<br>
+					</div>
+					
+			  {% endfor %}
+			  <br><br>
+			  </ol>
+
+		</form>
+  </div>
+
+{% endblock %}

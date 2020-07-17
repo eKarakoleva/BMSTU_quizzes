@@ -661,3 +661,8 @@ def student_quiz_view(request, pk, spk):
 		return render(request, 'teachers/view/student_quiz_view.html', {'tests': test, 'quiz_name': quiz_name, 'quiz_id': pk})
 	raise Http404
 
+def course_participants_list(request, pk):
+	cpr = repo.CourseParticipantsRepository(CourseParticipants)
+	participants = cpr.get_course_participants(pk)
+	return render(request, 'teachers/lists/quiz_participants.html', {'participants': participants})
+

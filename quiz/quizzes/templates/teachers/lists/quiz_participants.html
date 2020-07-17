@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block body_block %}
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'teachers:course_list' %}">My Courses</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{course.name}} </li>
+    </ol>
+  </nav>
+
+
+  <a href="{% url 'teachers:course_list' %}" class="btn btn-info">
+    <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+     Go back
+  </a>
+   <br>
+   <br>
+  <div class="card">
+    <table class="table mb-0" id="my_quizzes">
+      <thead>
+        <tr>
+          <th>First Name</th>
+          <th>Middle Name</th>
+          <th>Last Name</th>
+          <th>Cafedra</th>
+          <th>Join date</th>
+          <th></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for participant in participants %}
+          <tr id="course-{{course.id}}">
+              <td class="align-middle" title="{{ participant.fname }}">{{ participant.fname }}</td>
+              <td class="align-middle"></td>
+              <td class="align-middle" title="{{ participant.lname }}">{{  participant.lname }}</td>
+              <td class="align-middle" title=""> {{  participant.cafedra }} </td>
+              <td class="align-middle" title=""> {{ participant.join_date }} </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td class="bg-light text-center font-italic" colspan="5">There are not any participants yet!</td>
+          </tr>
+        {% endfor %}
+          <tr>
+            <td class="align-middle"></td>
+            <td class="align-middle"></td>
+            <td class="align-middle"></td>
+            <td class="align-middle"></td>
+            <td class="text-right"></td>
+            <td class="text-right"></td>
+          </tr>
+      </tbody>
+    </table>
+  </div>
+ 
+  {% block javascript %}
+  <script type="text/javascript">
+
+    function total_points() {
+        var sum = 0;
+      $('.add').each(function(){
+        sum += parseFloat($(this).text());           
+      });
+      $(".total").html(sum);
+    }
+    total_points();
+
+    function deleteQuiz(id) {
+      var action = confirm("Are you sure you want to delete this quiz?");
+      if (action != false) {
+        $.ajax({
+            url: '{% url "teachers:quiz_delete" %}',
+            data: {
+                'id': id,
+            },
+            dataType: 'json',
+            success: function (data) {
+              $("#my_quizzes #quiz-" + id).remove();
+              total_points();
+            }
+        });
+      }
+    }
+
+    function deactivateQuiz(id) {
+      var action = confirm("Are you sure you want to deactivate this quiz?");
+      if (action != false) {
+        console.log('aa')
+          $.ajax({
+              url: '{% url "teachers:deactivate_quiz" %}',
+              data: {
+                  'id': id,
+              },
+              dataType: 'json',
+              success: function (data) {
+                location.reload()
+              }
+          });
+      }
+    }
+
+
+</script>
+{% endblock javascript %}
+ {% endblock %}

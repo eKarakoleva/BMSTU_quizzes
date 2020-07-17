@@ -59,6 +59,7 @@ urlpatterns = [
        path('course/quiz/<int:pk>/grades/', view_students_quiz_grades, name = "view_students_quiz_grades"),
        path('course/quiz/<int:pk>/preview/', quiz_preview, name = "quiz_preview"),
        path('course/quiz/<int:pk>/student/<int:spk>/view/', student_quiz_view, name = "student_quiz_view"),
+       path('course/<int:pk>/participants/list/', course_participants_list, name = "course_participants_list"),
 
       
     ], 'quizzes'), namespace='teachers')),

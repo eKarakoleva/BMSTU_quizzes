@@ -3,6 +3,13 @@ from quizzes.models import CourseParticipants, User, QuizSolveRecord, Quiz, Quiz
 from django.utils import timezone
 import datetime
 
+class UserRepository(object):
+	def __init__(self, model):
+		self.model = model
+
+	def get_by_id(self, user_id):
+		return self.model.objects.filter(id = user_id).select_related('cafedra')
+
 class QuizRepository(object):
 	def __init__(self, model):
 		self.model = model
@@ -317,6 +324,22 @@ class CourseParticipantsRepository(object):
 		else:
 			is_participant = True
 		return is_participant
+
+	def get_course_participants(self, course_id):
+		participants = self.model.objects.filter(course_id = course_id).select_related('user').values('user__id', 'join_date')
+
+		if participants:
+			for participant in participants:
+				ur = UserRepository(User)
+				user = ur.get_by_id(participant['user__id'])
+				
+				if user:
+
+					participant['fname'] = user[0].first_name
+					participant['lname'] = user[0].last_name
+					participant['cafedra'] = user[0].cafedra
+
+		return participants
 
 class QuizSolveRecordRepository(object):
 	def __init__(self, model):

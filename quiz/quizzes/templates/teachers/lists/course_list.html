@@ -54,7 +54,7 @@
                         <a class="btn btn-info" id="mod_but" data = {{course.id}} data-toggle="modal" href="{% url 'teachers:update_course' course.id %}"  data-target="#modal" data-tooltip>Update</a> 
               			   <a class="btn btn-danger" onClick="deleteCourse({{course.id}})">Delete</a>
                       {% else %}
-                        <a class="btn btn-info">Participants</a>
+                        <a class="btn btn-info" href = "{% url 'teachers:course_participants_list' course.id %}">Participants</a>
                       {% endif %}
                     </td>
                   </tr>

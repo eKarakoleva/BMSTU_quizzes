@@ -5,6 +5,7 @@ from django.forms.utils import ValidationError
 
 from quizzes.models import (User, Cafedra, Course, Quiz, Questions, QuestionType, Answers, StudentAnswers)
 from quizzes.repositories import AnswerRepository
+
 class TeacherSignUpForm(UserCreationForm):
 	class Meta(UserCreationForm.Meta):
 		model = User
@@ -21,6 +22,7 @@ class TeacherSignUpForm(UserCreationForm):
 class StudentSignUpForm(UserCreationForm):
 	class Meta(UserCreationForm.Meta):
 		model = User
+
 		fields = ('username', 'email', 'first_name', 'last_name', 'cafedra')
 		
 

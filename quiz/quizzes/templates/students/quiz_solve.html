@@ -31,10 +31,12 @@
 	   
 			<div id="{{question_id}}"> 
 				<ul class="list-group">
+					<div class="pricing-levels-3">
 				   {% for id_ans, answer in qinfo.answers.items %}
-						 
+						 	         
+        
 						{% if qinfo.qtype == 'multiple'%}
-							<li class="list-group-item"><input type="checkbox" class="answer " name="{{question_id}}" value="{{id_ans}}"> {{answer.answer}}</li>
+							<li class="list-group-item"><input type="checkbox" num = "{{qinfo.cor_ans}}" class="answer single-checkbox" name="{{question_id}}" value="{{id_ans}}"> {{answer.answer}}</li>
 						{% endif %}
 
 						{% if qinfo.qtype == 'single' %}
@@ -42,6 +44,7 @@
 						{%endif%} 
 								  
 					{% endfor %}
+				</div>
 				</ul> 
 				{% if qinfo.qtype == 'open' or qinfo.qtype == 'compare'%}
 					<div class="form-group">
@@ -53,6 +56,7 @@
 			</div>
 			
 	  {% endfor %}
+
 	  <input type="submit" name="g" class="btn btn-primary" value="Submit" id="g">
 	  <br><br>
 	  </ol>
@@ -109,6 +113,14 @@
 	var menu_height = $(".menu-container").height()
 	var plus_h = $(".check").position()['top'] - menu_height
 	$("#horizontal").css({"top": menu_height + plus_h});
+
+	$('li').on('change', function(evt) {
+		limit = $(this).children().attr('num')
+		if($(this).parent().find('input:checked').length > limit) {
+			$(this).children().prop('checked', false)
+		}
+	});
+
 </script>
 {% endblock javascript %}
 {% endblock %}

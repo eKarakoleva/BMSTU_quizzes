@@ -159,19 +159,7 @@
 				});
 			}
 		}
-	function hide_show_form() {
-		sum_answers = parseFloat($(".total").text());
-		question_points = parseFloat($("#question_points").attr("name"));
-		if (question_points - sum_answers == 0){
-			$(".add_form").hide();
-			$("#full").show();
-		}
-		else{
-			$(".add_form").show();
-			$("#full").hide();
-		}
-	}
-	hide_show_form();
+
 
 
 </script>

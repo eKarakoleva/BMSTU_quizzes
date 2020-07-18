@@ -587,7 +587,7 @@ def save_checked_answers(request, pk, spk):
 		qsrr.update_quiz_points_and_status(solve_info_id, student_points + sum_points, True)
 		return JsonResponse({
 			'success': True,
-			'url': reverse('teachers:view_quiz_for_check', kwargs={'pk': course_id}), #, args=[{'courses': courses}]
+			'url': reverse('teachers:view_quiz_for_check', kwargs={'pk': pk}), #, args=[{'courses': courses}]
 			})
 	raise Http404
 

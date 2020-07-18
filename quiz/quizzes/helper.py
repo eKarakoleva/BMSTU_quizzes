@@ -39,11 +39,14 @@ def construct_quiz(quiz_id):
 
 		if question.qtype != 'open':
 			answers = ar.get_answer_points_and_name_by_question(question.id)
+			count_true = 0
 			for answer in answers:
 				temp[question.id]['answers'][answer.id] = {}
 				temp[question.id]['answers'][answer.id]['answer'] = answer.name
 				temp[question.id]['answers'][answer.id]['points'] = answer.points
-		
+				if answer.correct == True:
+					count_true += 1
+			temp[question.id]['cor_ans'] = count_true
 		quiz.update(temp)
 	return quiz
 

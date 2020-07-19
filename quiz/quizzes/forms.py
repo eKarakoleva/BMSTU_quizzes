@@ -34,7 +34,7 @@ class StudentSignUpForm(UserCreationForm):
 
 		for key in self.fields:
 			self.fields[key].required = True 
-			
+
 	def save(self, commit=True):
 		user = super().save(commit=False)
 		user.is_student = True
@@ -48,9 +48,10 @@ class CourseForm(forms.ModelForm):
 		fields = ('name', 'description', 'course_cafedra', 'points')
 
 		widgets = {
-			'description': forms.Textarea(attrs={'rows':4, 'cols':15}),
-			'name': forms.Textarea(attrs={'rows':4, 'cols':15}),
+			'description': forms.Textarea(attrs={'rows':5, 'cols':5}),
+			'name': forms.Textarea(attrs={'rows':2, 'cols':5}),
 		}
+
 	def __init__(self, *args, **kwargs):
 		super(CourseForm, self).__init__(*args, **kwargs)
 
@@ -84,6 +85,21 @@ class QuizInCodeForm(forms.ModelForm):
 
 	def __init__(self, *args, **kwargs):
 		super(QuizInCodeForm, self).__init__(*args, **kwargs)
+
+		for name in self.fields.keys():
+			self.fields[name].widget.attrs.update({
+				'class': 'form-control',
+			})
+
+		self.fields['in_code'].widget.attrs['readonly'] = True
+
+class CourseInCodeForm(forms.ModelForm):
+	class Meta:
+		model = Course
+		fields = ('in_code', )
+
+	def __init__(self, *args, **kwargs):
+		super(CourseInCodeForm, self).__init__(*args, **kwargs)
 
 		for name in self.fields.keys():
 			self.fields[name].widget.attrs.update({
@@ -140,7 +156,7 @@ class AnswerForm(forms.ModelForm):
 			})
 
 #STUDENTS
-
+'''
 class ActivationCodeForm(forms.ModelForm):
 	class Meta:
 		model = Answers
@@ -166,3 +182,5 @@ class TakeQuizForm(forms.ModelForm):
 
 	def __init__(self, *args, **kwargs):
 		super(TakeQuizForm, self).__init__(*args, **kwargs)
+
+'''

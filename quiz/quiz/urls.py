@@ -51,7 +51,8 @@ urlpatterns = [
        path('course/quiz/question/answers/delete',  DeleteAnswer.as_view(), name='delete_answer'),
        path('course/quiz/question/answers/<int:pk>/edit/', update_answer, name = "item_edit"),
 
-       path('course/quiz/<int:pk>/incode/update', update_in_code, name = "update_in_code"),
+       path('course/quiz/<int:pk>/incode/update', quiz_update_in_code, name = "quiz_update_in_code"),
+       path('course/<int:pk>/incode/update', course_update_in_code, name = "course_update_in_code"),
 
        path('course/quiz/<int:pk>/answers/check/', view_quiz_for_check, name = "view_quiz_for_check"), 
        path('course/quiz/<int:pk>/answers/check/student/<int:spk>/', get_answers_for_check, name = "get_answers_for_check"),
@@ -66,7 +67,8 @@ urlpatterns = [
 
     path('students/', include(([
        path('', view_all_not_joined_couses, name='course_list_student'),
-       path('course/<int:pk>/edit/', join_course, name = "join_course"),
+       path('course/<int:pk>/join/', join_course, name = "join_course"),
+       path('course/quiz/<int:pk>/join/', join_quiz, name = "join_quiz"),
        path('course/joined/', view_all_joined_couses, name = "course_joined_courses"),
        path('course/quiz/<int:pk>/confirm_take/', take_quiz_confirm, name = "take_quiz_confirm"),
        path('course/quiz/<int:pk>/take/', take_quiz, name = "take_quiz"),

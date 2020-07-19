@@ -10,6 +10,16 @@
       <li class="breadcrumb-item active" aria-current="page">Confirm start of the quiz</li>
     </ol>
   </nav>
+
+        <!-- Modal -->
+    <div class="modal fade" id="modal-code" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+      <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+
+          </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
   <h2 class="mb-3">Confirm action</h2>
   
   <p class="lead">Are you sure you want to start quiz <strong>"{{q.name}}"</strong>?<br> If you start, there is no going back!</p>
@@ -33,7 +43,11 @@
   </ul>
 </div>
     {% if minutes_left <= q.timer_minutes %}
-      <a href="{% url 'students:take_quiz' q.id %}" class="btn btn-success btn-lg">Yes, I'm sure</a>
+      {% if is_started != True%}
+        <a class="btn btn-success btn-lg" id="mod_but" data = {{q.id}} data-toggle="modal" href="{% url 'students:join_quiz' q.id %}" data-target="#modal-code" data-tooltip>Yes, I'm sure</a>
+      {% else %}
+        <a href="{% url 'students:take_quiz' q.id %}" class="btn btn-success btn-lg">Yes, I'm sure</a>
+      {% endif %}
     {% else %}
       <a href="{% url 'students:view_course_active_quizzes' course_id %}" class="btn btn-danger btn-lg">Sorry, your time is over! Click to go back.</a>
     {% endif %}

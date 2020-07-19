@@ -1,5 +1,5 @@
 from django.views.generic import (CreateView, DeleteView, DetailView, ListView,UpdateView)
-from quizzes.forms import StudentSignUpForm, CourseForm, TakeQuizForm, QuestionForm, AnswerForm
+from quizzes.forms import StudentSignUpForm, CourseForm, QuestionForm, AnswerForm
 from quizzes.models import Cafedra, User, Course, CourseParticipants, Quiz, Questions, QuizSolveRecord, StudentAnswers,StudentOpenAnswers
 from django.urls import reverse_lazy, reverse
 from django.shortcuts import render, get_object_or_404, redirect
@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from quizzes.decorators import student_required
 
 import quizzes.repositories as repo
-from django.http import HttpResponse, JsonResponse, Http404
+from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
 from django.template.loader import render_to_string
 from django.contrib import messages
 from django.db import transaction
@@ -43,6 +43,8 @@ def view_all_not_joined_couses(request):
 	courses = course.get_not_join_courses(request.user.id)
 	return render(request, 'students/lists/course_list.html', {'courses': courses})
 
+@login_required
+@student_required
 def join_course(request, pk, template_name='students/join_course.html'):
 	course= get_object_or_404(Course, pk=pk)
 	courses = repo.CourseRepository(Course)
@@ -59,6 +61,30 @@ def join_course(request, pk, template_name='students/join_course.html'):
 		return HttpResponse(render_to_string('teachers/update/item_edit_form_success.html'))
 	else:
 		return render(request, template_name, {'id': pk})
+
+@login_required
+@student_required
+def join_quiz(request, pk, template_name='students/join_quiz.html'):
+	quiz= get_object_or_404(Quiz, pk=pk)
+	qr = repo.QuizRepository(Quiz)
+	if request.method == 'POST':
+		code = request.POST.get('code')
+		in_code = qr.get_quiz_code(pk)
+		if in_code == code:
+			qsrr = repo.QuizSolveRecordRepository(QuizSolveRecord)
+			is_started = qsrr.check_if_started(pk, request.user.id)
+			if(not is_started):
+				qsrr.start_quiz(pk, request.user.id)
+
+			return redirect('students:take_quiz', pk=pk)
+			messages.success(request, 'Welcome to the course')
+		else:
+			messages.error(request, 'Please enter the right varification code.')
+			return redirect('students:take_quiz_confirm', pk=pk)
+	else:
+		return render(request, template_name, {'id': pk})
+
+
 
 @login_required
 @student_required
@@ -96,7 +122,7 @@ def take_quiz_confirm(request, pk):
 				minutes_left = time_delta.seconds / 60
 		else:
 			minutes_left = quiz[0].timer_minutes
-	return render(request, 'students/confirm/take_quiz_confirm.html', {'quiz': quiz, 'course_id': course_id, 'minutes_left': round(minutes_left)})
+	return render(request, 'students/confirm/take_quiz_confirm.html', {'quiz': quiz, 'course_id': course_id, 'minutes_left': round(minutes_left), 'is_started': is_started})
 
 
 @login_required
@@ -117,7 +143,7 @@ def take_quiz(request, pk):
 
 	is_started = qsrr.check_if_started(pk, request.user.id)
 	if(not is_started):
-		qsrr.start_quiz(pk, request.user.id)
+		raise Http404
 
 	timer = qr.get_quiz_timer(pk)
 	start_time = qsrr.get_start_time(pk, request.user.id)

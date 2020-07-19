@@ -81,18 +81,16 @@
                 data-target="#modal" title="edit item" data-tooltip >Update</a> 
                 <a class="btn btn-danger" onClick="deleteQuiz({{quiz.id}})">Delete</a>
               {% else %}
-
-                    <button class="btn btn-info dropdown-toggle" type="button" data-toggle="dropdown">Students
-                    <span class="caret"></span></button>
-                    <ul class="dropdown-menu">
-                        <li><a href="{% url 'teachers:view_quiz_for_check' quiz.id %}">Check quizzes</a></li>
-                        <li><a href="{% url 'teachers:view_students_quiz_grades' quiz.id %}">View grades</a></li>
-                    </ul>
     
-                <a class="btn btn-danger" id="mod_but" data = {{quiz.id}} data-toggle="modal" href="{% url 'teachers:update_in_code' quiz.id %}" 
-                data-target="#modal-code" title="edit item" data-tooltip >New in code</a> 
+                <a class="btn btn-danger" id="mod_but" data = {{quiz.id}} data-toggle="modal" href="{% url 'teachers:quiz_update_in_code' quiz.id %}" data-target="#modal-code" title="edit item" data-tooltip >New in code</a> 
                 
               {% endif %}
+              <button class="btn btn-info dropdown-toggle" type="button" data-toggle="dropdown">Students
+              <span class="caret"></span></button>
+              <ul class="dropdown-menu">
+                <li><a href="{% url 'teachers:view_quiz_for_check' quiz.id %}">Check quizzes</a></li>
+                <li><a href="{% url 'teachers:view_students_quiz_grades' quiz.id %}">View grades</a></li>
+              </ul>
               <a class="btn btn-primary" href="{% url 'teachers:quiz_preview' quiz.id %}">Preview</a>
             </td>
           </tr>

@@ -36,7 +36,7 @@ def create_superuser(self, email, password, cafedra_id):
 class Course(models.Model):
 	name = models.TextField()
 	owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='course_owner', unique=False)
-	description = models.CharField(max_length=200)
+	description = models.TextField(blank=True)
 	course_cafedra = models.ForeignKey(Cafedra, on_delete=models.CASCADE)
 	is_active = models.BooleanField(default=False)
 	points = models.IntegerField(default=200)

@@ -23,6 +23,15 @@
           </div><!-- /.modal-content -->
       </div><!-- /.modal-dialog -->
     </div><!-- /.modal -->
+
+              <!-- Modal -->
+    <div class="modal fade" id="modal-update_incode" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" data-backdrop="static">
+      <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+
+          </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
     <h2 class="mb-3">My Courses</h2>
     <a href="{% url 'teachers:course_add' %}" class="btn btn-primary mb-3" role="button">Add Course</a>
     <div class="card">
@@ -55,6 +64,8 @@
               			   <a class="btn btn-danger" onClick="deleteCourse({{course.id}})">Delete</a>
                       {% else %}
                         <a class="btn btn-info" href = "{% url 'teachers:course_participants_list' course.id %}">Participants</a>
+
+                        <a class="btn btn-danger" id="mod_but" data = {{course.id}} data-toggle="modal" href="{% url 'teachers:course_update_in_code' course.pk %}" data-target="#modal-update_incode" title="edit item" data-tooltip >New in code</a> 
                       {% endif %}
                     </td>
                   </tr>

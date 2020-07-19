@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import (CreateView, DeleteView, DetailView, ListView,UpdateView)
-from quizzes.forms import TeacherSignUpForm, QuizForm, QuestionForm, AnswerForm, CourseForm, QuizActivateForm, QuizInCodeForm
+from quizzes.forms import TeacherSignUpForm, QuizForm, QuestionForm, AnswerForm, CourseForm, QuizActivateForm, QuizInCodeForm, CourseInCodeForm
 from quizzes.models import Cafedra, Course, User, Quiz, Questions, Answers, QuizSolveRecord, CourseParticipants, StudentOpenAnswers
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages 
@@ -51,9 +51,9 @@ class CourseListView(ListView,):
 @method_decorator([login_required, teacher_required], name='dispatch')
 class CourseCreateView(CreateView):
 	model = Course
-	fields = ('name', 'description', 'course_cafedra', 'points')
+	form_class = CourseForm
 	template_name = 'teachers/add/course_add.html'
-
+	
 	def form_valid(self, form):
 		course = form.save(commit=False)
 		course.owner = self.request.user
@@ -221,9 +221,8 @@ def view_quiz_info(request, pk, template_name='teachers/info/quiz_info.html'):
 	quizzesR = repo.QuizRepository(Quiz)
 	owner_id = quizzesR.get_owner_id(pk)
 	quizzes = quizzesR.get_by_id(pk)
-	if request.user.id == owner_id:
-		return render(request, template_name, {'id': pk, 'quizzes': quizzes})
-	raise Http404
+	return render(request, template_name, {'id': pk, 'quizzes': quizzes})
+
 
 @method_decorator([login_required, teacher_required], name='dispatch')
 class DeactivateQuiz(UpdateView):
@@ -593,7 +592,7 @@ def save_checked_answers(request, pk, spk):
 
 @login_required
 @teacher_required
-def update_in_code(request, pk, template_name='teachers/update/update_in_code.html'):
+def quiz_update_in_code(request, pk, template_name='teachers/update/update_in_code.html'):
 	quiz= get_object_or_404(Quiz, pk=pk)
 	quizzes = repo.QuizRepository(Quiz)
 	owner_id = quizzes.get_owner_id(pk)
@@ -609,6 +608,23 @@ def update_in_code(request, pk, template_name='teachers/update/update_in_code.ht
 		return render(request, template_name, {'form':form, 'id': pk})
 	raise Http404
 
+@login_required
+@teacher_required
+def course_update_in_code(request, pk, template_name='teachers/update/course_update_in_code.html'):
+	course= get_object_or_404(Course, pk=pk)
+	cr = repo.CourseRepository(Course)
+	owner_id = cr.get_owner_id(pk)
+
+	if request.user.id == owner_id:
+
+		form = CourseInCodeForm(request.POST or None, instance=course)
+		if form.is_valid():
+			course = form.save(commit=False)
+			if len(form.cleaned_data["in_code"]) <= 6:
+				course.save()
+			return HttpResponse(render_to_string('teachers/update/item_edit_form_success.html'))
+		return render(request, template_name, {'form':form, 'id': pk})
+	raise Http404
 
 @login_required
 @teacher_required
@@ -667,6 +683,7 @@ def course_participants_list(request, pk):
 	if request.user.id == owner_id:
 		cpr = repo.CourseParticipantsRepository(CourseParticipants)
 		participants = cpr.get_course_participants(pk)
-		return render(request, 'teachers/lists/quiz_participants.html', {'participants': participants})
+		course_name = cr.get_name(pk)
+		return render(request, 'teachers/lists/quiz_participants.html', {'participants': participants, 'course_name': course_name})
 	raise Http404
 

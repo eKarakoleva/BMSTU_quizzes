@@ -101,6 +101,10 @@ class QuizRepository(object):
 	def is_course_active(self, quiz_id):
 		return self.model.objects.filter(id=quiz_id).select_related('course').values('course__is_active')[0]['course__is_active']
 
+
+	def get_quiz_code(self, quiz_id):
+		return self.model.objects.only('in_code').get(id=quiz_id).in_code
+
 class CourseRepository(object):
 	def __init__(self, model):
 		self.model = model

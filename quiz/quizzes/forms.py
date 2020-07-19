@@ -9,8 +9,13 @@ from quizzes.repositories import AnswerRepository
 class TeacherSignUpForm(UserCreationForm):
 	class Meta(UserCreationForm.Meta):
 		model = User
-		fields = ('username', 'email', 'first_name', 'last_name', 'cafedra')
-		
+		fields = ('username', 'email', 'first_name', 'surname', 'last_name', 'cafedra')
+
+	def __init__(self, *args, **kwargs):
+		super(TeacherSignUpForm, self).__init__(*args, **kwargs)
+
+		for key in self.fields:
+			self.fields[key].required = True 
 
 	def save(self, commit=True):
 		user = super().save(commit=False)
@@ -22,10 +27,14 @@ class TeacherSignUpForm(UserCreationForm):
 class StudentSignUpForm(UserCreationForm):
 	class Meta(UserCreationForm.Meta):
 		model = User
+		fields = ('username', 'email', 'first_name', 'surname', 'last_name', 'cafedra')
 
-		fields = ('username', 'email', 'first_name', 'last_name', 'cafedra')
-		
+	def __init__(self, *args, **kwargs):
+		super(StudentSignUpForm, self).__init__(*args, **kwargs)
 
+		for key in self.fields:
+			self.fields[key].required = True 
+			
 	def save(self, commit=True):
 		user = super().save(commit=False)
 		user.is_student = True

@@ -7,7 +7,6 @@
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
       <li class="breadcrumb-item">My Courses</li>
-      <li class="breadcrumb-item">{{q.name}}</li>
       <li class="breadcrumb-item active" aria-current="page">Confirm start of the quiz</li>
     </ol>
   </nav>
@@ -38,6 +37,10 @@
     {% else %}
       <a href="{% url 'students:view_course_active_quizzes' course_id %}" class="btn btn-danger btn-lg">Sorry, your time is over! Click to go back.</a>
     {% endif %}
+      <a href="{% url 'students:view_course_active_quizzes' course_id %}" class="btn btn-outline-secondary" role="button">Nevermind</a>
+      <br>
+      <br>
+
   {% endfor %}
  
 {% endblock %}

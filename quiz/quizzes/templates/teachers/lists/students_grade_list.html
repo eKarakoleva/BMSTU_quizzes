@@ -31,7 +31,7 @@
         {% for quiz in quizzes %}
           <tr id="course-{{course.id}}">
               <td class="align-middle" title="{{ quiz.stud_fname }}">{{ quiz.stud_fname }}</td>
-              <td class="align-middle"></td>
+              <td class="align-middle">{{quiz.stud_surname}}</td>
               <td class="align-middle" title="{{ quiz.stud_lname }}">{{ quiz.stud_lname }}</td>
               <td class="align-middle" title="{{ quiz.stud_cefedra }}">{{ quiz.stud_cefedra }}</td>
               {% if quiz.points >= min_points and quiz.points <= good_points %}

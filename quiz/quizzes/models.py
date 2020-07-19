@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import RegexValidator
 
 class Cafedra(models.Model):
 	name = models.CharField(max_length=50)
@@ -8,6 +9,12 @@ class Cafedra(models.Model):
 		return self.name
 
 class User(AbstractUser):
+	alphanumeric = RegexValidator(r'^[A-Za-z\-]*$', 'Only alphanumeric characters and dashes are allowed.')
+
+	surname = models.CharField(max_length=100, validators=[alphanumeric])
+	first_name = models.CharField(max_length=50, validators=[alphanumeric])
+	last_name = models.CharField(max_length=100, validators=[alphanumeric])
+	
 	is_student = models.BooleanField(default=False)
 	is_teacher = models.BooleanField(default=False)
 	cafedra = models.ForeignKey(Cafedra, on_delete=models.PROTECT, related_name='user_cafedra',blank=True, null=True)

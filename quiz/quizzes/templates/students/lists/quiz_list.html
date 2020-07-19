@@ -63,10 +63,11 @@
                 <a href="{% url 'students:take_quiz_confirm' quiz.id %}" class="btn btn-warning">Take</a>
               {% endif %}
             {% endif %}
+            {% if quiz.sis_fully_checked == True %}
+              <a href="{% url 'students:graded_quiz_view' quiz.id %}" class="btn btn-info">View</a>
+            {% endif %}
             </td>
-             {% if quiz.sis_fully_checked == True %}
-             	<td class="align-middle"><a href="{% url 'students:graded_quiz_view' quiz.id %}" class="btn btn-info">View</a></td>
-             {% endif %}
+
           </tr>
         {% empty %}
           <tr>

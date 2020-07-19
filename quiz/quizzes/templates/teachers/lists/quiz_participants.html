@@ -32,7 +32,7 @@
         {% for participant in participants %}
           <tr id="course-{{course.id}}">
               <td class="align-middle" title="{{ participant.fname }}">{{ participant.fname }}</td>
-              <td class="align-middle"></td>
+              <td class="align-middle">{{participant.surname}}</td>
               <td class="align-middle" title="{{ participant.lname }}">{{  participant.lname }}</td>
               <td class="align-middle" title=""> {{  participant.cafedra }} </td>
               <td class="align-middle" title=""> {{ participant.join_date }} </td>

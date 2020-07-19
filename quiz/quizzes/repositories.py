@@ -337,6 +337,7 @@ class CourseParticipantsRepository(object):
 
 					participant['fname'] = user[0].first_name
 					participant['lname'] = user[0].last_name
+					participant['surname'] = user[0].surname
 					participant['cafedra'] = user[0].cafedra
 
 		return participants
@@ -395,8 +396,10 @@ class QuizSolveRecordRepository(object):
 				if student:
 					quiz.stud_id =  student[0].id
 					quiz.stud_fname = student[0].first_name
+					quiz.stud_surname = student[0].surname
 					quiz.stud_lname = student[0].last_name
 					quiz.stud_cefedra = student[0].cafedra.name
+
 		return quizzes
 
 	def update_quiz_points_and_status(self, id, points, status):

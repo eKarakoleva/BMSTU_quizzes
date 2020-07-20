@@ -39,7 +39,7 @@ class Course(models.Model):
 	description = models.TextField(blank=True)
 	course_cafedra = models.ForeignKey(Cafedra, on_delete=models.CASCADE)
 	is_active = models.BooleanField(default=False)
-	points = models.IntegerField(default=200)
+	points = models.FloatField(default=200)
 	in_code = models.CharField(max_length=6, blank=True)
 
 	def __str__(self):
@@ -51,9 +51,9 @@ class Quiz(models.Model):
 	owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quiz_owner', unique=False)
 	description = models.TextField(blank=True)
 	course = models.ForeignKey(Course, on_delete=models.CASCADE,  related_name='quiz_course', unique=False)
-	max_points = models.IntegerField(default=100)
-	good_points = models.IntegerField(default=0)
-	min_points = models.IntegerField(default=0)
+	max_points = models.FloatField(default=100)
+	good_points = models.FloatField(default=0)
+	min_points = models.FloatField(default=0)
 	timer_minutes = models.IntegerField(default=0)
 	#done = models.BooleanField(default=False)
 	is_active = models.BooleanField(default=False)
@@ -73,7 +73,7 @@ class Questions(models.Model):
 	name = models.TextField()
 	quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='quiz_id', unique=False)
 	description = models.TextField(blank=True)
-	points = models.IntegerField(default=0)
+	points = models.FloatField(default=0)
 	QUESTION_TYPES = [
 		('multiple', 'multiple'),
 		('single', 'single'),
@@ -89,7 +89,7 @@ class Questions(models.Model):
 class Answers(models.Model):
 	name = models.TextField()
 	question = models.ForeignKey(Questions, on_delete=models.CASCADE, related_name='question_id', unique=False)
-	points = models.IntegerField(default=0)
+	points = models.FloatField(default=0)
 	correct = models.BooleanField(default=True)
 
 	def __str__(self):
@@ -113,7 +113,7 @@ class QuizSolveRecord(models.Model):
 	time_start = models.DateTimeField(auto_now_add=True)
 	#time_end = models.DateTimeField(auto_now=True)
 	time_end = models.DateTimeField(auto_now_add=True)
-	points = models.IntegerField(default=0)
+	points = models.FloatField(default=0)
 	is_fully_checked = models.BooleanField(null = True)
 
 
@@ -132,5 +132,5 @@ class StudentOpenAnswers(models.Model):
 	solve_info = models.ForeignKey(QuizSolveRecord, on_delete=models.CASCADE, related_name='sosolve_info', unique=False)
 	question = models.ForeignKey(Questions, on_delete=models.CASCADE, related_name='oanswer_question', unique=False)
 	answer = models.TextField(blank=True)
-	points = models.IntegerField(default=0)
+	points = models.FloatField(default=0)
 

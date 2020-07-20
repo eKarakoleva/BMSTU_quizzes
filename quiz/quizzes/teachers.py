@@ -161,7 +161,7 @@ def quiz_add(request, pk):
 				messages.success(request, 'You may now add question/options to the quiz.')
 				return redirect('/teachers/course/%d/quizzes'%pk)
 			else:
-				messages.error(request, 'You put more points than you have left. Available points: %d'%free_points, extra_tags='alert')
+				messages.error(request, 'You put more points than you have left. Available points: %f'%free_points, extra_tags='alert')
 			
 	else:
 		form = QuizForm()
@@ -205,10 +205,10 @@ def update_quiz(request, pk, template_name='teachers/update/update_quiz.html'):
 			form_points_data = form.cleaned_data["max_points"]
 			if form_points_data > free_points:
 				quiz.max_points = cur_quiz_points
-				messages.error(request, 'Available course points: %d. '%free_points, extra_tags='alert')
+				messages.error(request, 'Available course points: %f. '%free_points, extra_tags='alert')
 			if sum_question_points > form_points_data:
 				quiz.max_points = cur_quiz_points
-				messages.error(request, 'Question points in this quiz are: %d. '%sum_question_points, extra_tags='alert')
+				messages.error(request, 'Question points in this quiz are: %f. '%sum_question_points, extra_tags='alert')
 			quiz.save()
 			return HttpResponse(render_to_string('teachers/update/item_edit_form_success.html'))
 		return render(request, template_name, {'form':form, 'id': pk, 'free_points': free_points, 'sum_questions_points': sum_question_points})
@@ -322,6 +322,7 @@ def question_add(request, pk):
 	sum_questions_points = questionR.sum_all_quiz_questions_points(pk)
 
 	free_points = quiz_points - sum_questions_points
+	free_points = round(free_points, 1)
 	if request.user.id == owner_id and not is_active:
 		if request.method == 'POST':
 			form = QuestionForm(request.POST)
@@ -335,7 +336,7 @@ def question_add(request, pk):
 					messages.success(request, 'You may now add answers/options to the question.')
 					return redirect('/teachers/course/quiz/%d/questions/'%pk)
 				else:
-					messages.error(request, 'You put more points than you have left. Available points: %d'%free_points, extra_tags='alert')
+					messages.error(request, 'You put more points than you have left. Available points: %f'%free_points, extra_tags='alert')
 
 		else:
 			form = QuestionForm()
@@ -359,20 +360,21 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 		quiz_points = questions.get_quiz_points(pk)
 		cur_question_points = questions.get_question_points(pk)
 		aval_points = quiz_points - sum_quiz_questions + cur_question_points
-
+		aval_points = round(aval_points, 1)
 		form = QuestionForm(request.POST or None, instance=question)
 		if form.is_valid():
 			question = form.save(commit=False)
 			form_points_data = form.cleaned_data["points"]
 			if (form_points_data > aval_points):
 				question.points = cur_question_points
-				messages.error(request, 'Available course points: %d. '%aval_points)
+				messages.error(request, 'Available course points: %f. '%aval_points)
 			if (form_points_data < sum_answers_points):
 				question.points = cur_question_points
-				messages.error(request, 'Answer points in this question are: %d. '%sum_answers_points)
+				messages.error(request, 'Answer points in this question are: %f. '%sum_answers_points)
 			question.save()
 			is_done = questions.get_done_status(pk)
-			if form_points_data > sum_answers_points and aval_points > form_points_data:
+			
+			if form_points_data > sum_answers_points or aval_points < form_points_data:
 				if is_done == True:
 					questions.update_is_done(pk, False)
 			else:
@@ -433,7 +435,7 @@ def add_answer(request, qpk):
 			question_points = questions.get_question_points(qpk)
 			form_points_data = form.cleaned_data["points"]
 			free_points = question_points - sum_answers_points
-
+			free_ponts = round(free_points, 1)
 			instance.question_id = qpk
 			if form_points_data <= free_points:
 				instance.save()
@@ -441,10 +443,12 @@ def add_answer(request, qpk):
 			else:
 				instance.points = 0
 				instance.save()
-				messages.error(request, 'You put more points than you have left. Available points: %d'%free_points)
+				messages.error(request, 'You put more points than you have left. Available points: %f'%free_points)
 			# serialize in new friend object in json
 			ser_instance = serializers.serialize('json', [ instance, ])
-			if(free_points == form_points_data):
+			left_points = round(free_points - form_points_data, 1)
+
+			if free_points == form_points_data or left_points <= 0:
 				questions.update_is_done(qpk, True)
 			# send to client side.
 			return JsonResponse({"instance": ser_instance}, status=200)
@@ -496,7 +500,7 @@ def update_answer(request, pk, template_name='teachers/update/item_edit_form.htm
 		question_points = answersR.get_question_points(question_id)
 		answer_points = answersR.get_answer_points(pk)
 		free_points = question_points - sum_answers_points + answer_points
-
+		free_points = round(free_points, 1)
 		if form.is_valid():
 
 			questions = repo.QuestionRepository(Questions)
@@ -515,7 +519,7 @@ def update_answer(request, pk, template_name='teachers/update/item_edit_form.htm
 				instance.points = answer_points
 				if is_done == False:
 					questions.update_is_done(question_id, True)
-				messages.error(request, 'You put more points than you have left. Available points: %d'%free_points)
+				messages.error(request, 'You put more points than you have left. Available points: %f'%free_points)
 			instance.save()
 			return HttpResponse(render_to_string('teachers/update/item_edit_form_success.html'))
 		return render(request, template_name, {'form':form, 'id': pk, 'free_points': free_points, 'question_points': question_points})
@@ -578,8 +582,8 @@ def save_checked_answers(request, pk, spk):
 			for j in range(0, len(open_questions)):
 				question_id = int(new_points[i]['name'])
 				if question_id == open_questions[j]['id']:
-					points = int(new_points[i]['value'])
-					open_question_points = int(open_questions[j]['points'])
+					points = float(new_points[i]['value'])
+					open_question_points = float(open_questions[j]['points'])
 					if points <= open_question_points:
 						soar.update_answer_points(solve_info_id, question_id, pk, spk, points)
 						sum_points += points

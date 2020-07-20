@@ -102,7 +102,7 @@
 			$('.add').each(function(){
 				sum += parseFloat($(this).text()); 				   
 			});
-			$(".total").html(sum);
+			$(".total").html(sum.toFixed(1));
 		}
 
 		total_points();
@@ -149,7 +149,7 @@
 								if (data.deleted) {
 									$("#my_answers #answer-" + id).remove();
 									total_points();
-									hide_show_form();
+									
 								}
 						}
 				});

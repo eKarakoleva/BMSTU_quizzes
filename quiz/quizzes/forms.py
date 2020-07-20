@@ -58,6 +58,7 @@ class CourseForm(forms.ModelForm):
 		for name in self.fields.keys():
 			self.fields[name].widget.attrs.update({
 				'class': 'form-control',
+				'step': '0.1'
 			})
 
 class QuizForm(forms.ModelForm):
@@ -76,6 +77,7 @@ class QuizForm(forms.ModelForm):
 		for name in self.fields.keys():
 			self.fields[name].widget.attrs.update({
 				'class': 'form-control',
+				'step': '0.1'
 			})
 
 class QuizInCodeForm(forms.ModelForm):
@@ -89,6 +91,7 @@ class QuizInCodeForm(forms.ModelForm):
 		for name in self.fields.keys():
 			self.fields[name].widget.attrs.update({
 				'class': 'form-control',
+				'step': '0.1'
 			})
 
 		self.fields['in_code'].widget.attrs['readonly'] = True
@@ -104,6 +107,7 @@ class CourseInCodeForm(forms.ModelForm):
 		for name in self.fields.keys():
 			self.fields[name].widget.attrs.update({
 				'class': 'form-control',
+				'step': '0.1',
 			})
 
 		self.fields['in_code'].widget.attrs['readonly'] = True
@@ -119,6 +123,7 @@ class QuizActivateForm(forms.ModelForm):
 		for name in self.fields.keys():
 			self.fields[name].widget.attrs.update({
 				'class': 'form-control',
+				'step': '0.1',
 			})
 
 class QuestionForm(forms.ModelForm):
@@ -128,6 +133,7 @@ class QuestionForm(forms.ModelForm):
 		for name in self.fields.keys():
 			self.fields[name].widget.attrs.update({
 				'class': 'form-control',
+				'step': '0.1'
 			})
 	class Meta:
 		model = Questions
@@ -153,6 +159,7 @@ class AnswerForm(forms.ModelForm):
 		for name in self.fields.keys():
 			self.fields[name].widget.attrs.update({
 				'class': 'form-control',
+				'step': '0.1',
 			})
 
 #STUDENTS

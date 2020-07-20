@@ -306,8 +306,22 @@ class CourseParticipantsRepository(object):
 					break
 		return courses
 
-	def is_quiz_in_joined_courses(self, quiz_id ,user_id):
+	def is_quiz_in_joined_active_courses(self, quiz_id ,user_id):
 		course_id = Quiz.objects.filter(id=quiz_id, is_active = True).values('course_id')
+
+		if course_id:
+			joined = self.model.objects.filter(user_id=user_id, course_id = course_id[0]['course_id']).values('id')
+			if not joined:
+				joined = False
+			else:
+				joined = True
+		else:
+			joined = False
+		
+		return joined
+
+	def is_quiz_in_joined_courses(self, quiz_id ,user_id):
+		course_id = Quiz.objects.filter(id=quiz_id).values('course_id')
 
 		if course_id:
 			joined = self.model.objects.filter(user_id=user_id, course_id = course_id[0]['course_id']).values('id')

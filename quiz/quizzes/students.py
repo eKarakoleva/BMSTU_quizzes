@@ -103,7 +103,7 @@ def take_quiz_confirm(request, pk):
 	course_id = qr.get_course_id(pk) 
 
 	cpr = repo.CourseParticipantsRepository(CourseParticipants)
-	is_in_joined_courses = cpr.is_quiz_in_joined_courses(pk, request.user.id)
+	is_in_joined_courses = cpr.is_quiz_in_joined_active_courses(pk, request.user.id)
 	if not is_in_joined_courses:
 		raise Http404
 
@@ -133,7 +133,7 @@ def take_quiz(request, pk):
 	qsrr = repo.QuizSolveRecordRepository(QuizSolveRecord)
 	cpr = repo.CourseParticipantsRepository(CourseParticipants)
 
-	is_in_joined_courses = cpr.is_quiz_in_joined_courses(pk, request.user.id)
+	is_in_joined_courses = cpr.is_quiz_in_joined_active_courses(pk, request.user.id)
 	if not is_in_joined_courses:
 		raise Http404
 
@@ -163,7 +163,7 @@ def take_quiz(request, pk):
 
 def view_course_active_quizzes(request, pk):
 	cpr = repo.CourseParticipantsRepository(CourseParticipants)
-	is_in_joined_courses = cpr.is_quiz_in_joined_courses(pk, request.user.id)
+	is_in_joined_courses = cpr.is_quiz_in_joined_active_courses(pk, request.user.id)
 	if not is_in_joined_courses:
 		raise Http404
 		
@@ -237,7 +237,7 @@ def graded_quiz_view(request, pk):
 	qr = repo.QuizRepository(Quiz)
 
 	cpr = repo.CourseParticipantsRepository(CourseParticipants)
-	is_in_joined_courses = cpr.is_quiz_in_joined_courses(pk, request.user.id)
+	is_in_joined_courses = cpr.is_quiz_in_joined_active_courses(pk, request.user.id)
 	if not is_in_joined_courses:
 		raise Http404
 

@@ -363,10 +363,13 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 		aval_points = round(aval_points, 1)
 		form = QuestionForm(request.POST or None, instance=question)
 		if form.is_valid():
+			same_points = False
 			question = form.save(commit=False)
 			form_points_data = form.cleaned_data["points"]
+
 			if (form_points_data > aval_points):
 				question.points = cur_question_points
+				same_points = True
 				messages.error(request, 'Available course points: %f. '%aval_points)
 			if (form_points_data < sum_answers_points):
 				question.points = cur_question_points
@@ -374,12 +377,14 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 			question.save()
 			is_done = questions.get_done_status(pk)
 			
-			if form_points_data > sum_answers_points or aval_points < form_points_data:
+			if form_points_data > sum_answers_points and not same_points:
+
 				if is_done == True:
 					questions.update_is_done(pk, False)
 			else:
 				if is_done == False and form_points_data == sum_answers_points:
 					questions.update_is_done(pk, True)
+
 			if form.cleaned_data["qtype"] == 'open':
 				questions.update_is_done(pk, True)
 			return HttpResponse(render_to_string('teachers/update/item_edit_form_success.html'))
@@ -437,7 +442,10 @@ def add_answer(request, qpk):
 			free_points = question_points - sum_answers_points
 			free_ponts = round(free_points, 1)
 			instance.question_id = qpk
-			if form_points_data <= free_points:
+
+			left_points = round(free_points - form_points_data, 1)
+
+			if form_points_data < free_points or left_points == 0.0:
 				instance.save()
 				messages.success(request, 'Success!')
 			else:
@@ -446,9 +454,8 @@ def add_answer(request, qpk):
 				messages.error(request, 'You put more points than you have left. Available points: %f'%free_points)
 			# serialize in new friend object in json
 			ser_instance = serializers.serialize('json', [ instance, ])
-			left_points = round(free_points - form_points_data, 1)
 
-			if free_points == form_points_data or left_points <= 0:
+			if left_points == 0:
 				questions.update_is_done(qpk, True)
 			# send to client side.
 			return JsonResponse({"instance": ser_instance}, status=200)
@@ -507,8 +514,11 @@ def update_answer(request, pk, template_name='teachers/update/item_edit_form.htm
 			instance = form.save(commit=False)
 			form_points_data = form.cleaned_data["points"]
 			is_done = questions.get_done_status(question_id)
-			if form_points_data <= free_points:
-				if(form_points_data == free_points):
+
+			difference = round(free_points - form_points_data, 1)
+			
+			if difference >= 0:
+				if(difference == 0):
 					if is_done == False: 
 						questions.update_is_done(question_id, True)
 				else:
@@ -517,8 +527,6 @@ def update_answer(request, pk, template_name='teachers/update/item_edit_form.htm
 				messages.success(request, 'Success!')
 			else:
 				instance.points = answer_points
-				if is_done == False:
-					questions.update_is_done(question_id, True)
 				messages.error(request, 'You put more points than you have left. Available points: %f'%free_points)
 			instance.save()
 			return HttpResponse(render_to_string('teachers/update/item_edit_form_success.html'))
@@ -677,10 +685,11 @@ def student_quiz_view(request, pk, spk):
 	owner_id = qr.get_owner_id(pk)
 	if request.user.id == owner_id:
 		cpr = repo.CourseParticipantsRepository(CourseParticipants)
+
 		is_in_joined_courses = cpr.is_quiz_in_joined_courses(pk, spk)
 		if not is_in_joined_courses:
 			raise Http404
-
+	    
 		test = construct_quiz_student_results(pk, spk)
 		quiz_name =qr.get_name(pk)
 		return render(request, 'teachers/view/student_quiz_view.html', {'tests': test, 'quiz_name': quiz_name, 'quiz_id': pk})

@@ -579,8 +579,13 @@ def save_checked_answers(request, pk, spk):
 				question_id = int(new_points[i]['name'])
 				if question_id == open_questions[j]['id']:
 					points = int(new_points[i]['value'])
-					soar.update_answer_points(solve_info_id, question_id, pk, spk, points)
-					sum_points += points
+					open_question_points = int(open_questions[j]['points'])
+					if points <= open_question_points:
+						soar.update_answer_points(solve_info_id, question_id, pk, spk, points)
+						sum_points += points
+					else:
+						soar.update_answer_points(solve_info_id, question_id, pk, spk, open_question_points)
+						sum_points += open_question_points					
 					break
 		student_points = qsrr.get_points(solve_info_id)
 		qsrr.update_quiz_points_and_status(solve_info_id, student_points + sum_points, True)

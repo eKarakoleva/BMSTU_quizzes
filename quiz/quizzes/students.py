@@ -162,6 +162,11 @@ def take_quiz(request, pk):
 	return render(request, 'students/quiz_solve.html', {'tests': test, 'quiz_id': pk, 'timer': timer, 'minutes_left': time_delta, 'quiz_name': quiz_name})
 
 def view_course_active_quizzes(request, pk):
+	cpr = repo.CourseParticipantsRepository(CourseParticipants)
+	is_in_joined_courses = cpr.is_quiz_in_joined_courses(pk, request.user.id)
+	if not is_in_joined_courses:
+		raise Http404
+		
 	quiz = repo.QuizRepository(Quiz)
 	quizzes = quiz.get_active_quizzes_student_info(pk, request.user.id)
 	if not quizzes:

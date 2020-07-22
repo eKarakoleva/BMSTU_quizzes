@@ -65,6 +65,11 @@ def join_course(request, pk, template_name='students/join_course.html'):
 @login_required
 @student_required
 def join_quiz(request, pk, template_name='students/join_quiz.html'):
+	cpr = repo.CourseParticipantsRepository(CourseParticipants)
+	is_in_joined_courses = cpr.is_quiz_in_joined_active_courses(pk, request.user.id)
+	if not is_in_joined_courses:
+		raise Http404
+
 	quiz= get_object_or_404(Quiz, pk=pk)
 	qr = repo.QuizRepository(Quiz)
 	if request.method == 'POST':
@@ -166,7 +171,7 @@ def view_course_active_quizzes(request, pk):
 	is_in_joined_courses = cpr.is_quiz_in_joined_active_courses(pk, request.user.id)
 	if not is_in_joined_courses:
 		raise Http404
-		
+
 	quiz = repo.QuizRepository(Quiz)
 	quizzes = quiz.get_active_quizzes_student_info(pk, request.user.id)
 	if not quizzes:
@@ -180,52 +185,70 @@ def view_course_active_quizzes(request, pk):
 @login_required
 @student_required
 def finish_test(request, pk):
-	student_answers = request.POST['data']
-	student_answers = json.loads(student_answers)
-	quiz_data = helper.construct_main(pk)
-	is_fully_checked = True
-	points = 0
+
 	qsrr = repo.QuizSolveRecordRepository(QuizSolveRecord)
+	is_submitted = qsrr.if_quiz_is_submitted(pk, request.user.id)
+	if is_submitted:
+		raise Http404
+
+	cpr = repo.CourseParticipantsRepository(CourseParticipants)
+	is_in_joined_courses = cpr.is_quiz_in_joined_active_courses(pk, request.user.id)
+	if not is_in_joined_courses:
+		raise Http404
+
 	solve_info_id = qsrr.get_solve_info_id(pk, request.user.id)
-	solve_info_id = int(solve_info_id)
-	sar = repo.StudentAnswersRepository(StudentAnswers)
-	soar = repo.StudentOpenAnswersRepository(StudentOpenAnswers)
-	for i in range(1, len(student_answers)):
-		if i != 0:
-			#name = question_id
-			#value = answer_id or answer to open question
-			key = int(student_answers[i]['name'])
-			#check if question_id belongs to quiz
-			if key in quiz_data.keys():
-				if quiz_data[key]['qtype'] != 'open' and quiz_data[key]['qtype'] != 'compare':
-					#check if answer_id belongs to question
-					answer_id = int(student_answers[i]['value'])
-					if answer_id in quiz_data[key]['answers'].keys():
-						points += float(quiz_data[key]['answers'][answer_id])
-						#create record 
-						sar.save_answer(solve_info_id, key, answer_id)
-				else:
-					answer = student_answers[i]['value']
-					if quiz_data[key]['qtype'] == 'open':
-						is_fully_checked = False
-						soar.save_answer(solve_info_id, key, answer, 0)
-					if(len(answer)):
-						if quiz_data[key]['qtype'] == 'compare':
-							points_compare = helper.check_student_compare_answer(key, str(answer))
-							points += points_compare
-							#save answer + compare algorithm = points
-							soar.save_answer(solve_info_id, key, answer, points_compare)
-	qsrr.finish_quiz(pk, request.user.id, points, is_fully_checked)
-	qr = repo.QuizRepository(Quiz)
-	course_id = qr.get_course_id(pk)
-	return JsonResponse({
-		'success': True,
-		'url': reverse('students:view_course_active_quizzes', kwargs={'pk': course_id}), #, args=[{'courses': courses}]
-		})
+	if solve_info_id != 0:
+		student_answers = request.POST['data']
+		student_answers = json.loads(student_answers)
+		quiz_data = helper.construct_main(pk)
+		is_fully_checked = True
+		points = 0
+
+		solve_info_id = int(solve_info_id)
+		sar = repo.StudentAnswersRepository(StudentAnswers)
+		soar = repo.StudentOpenAnswersRepository(StudentOpenAnswers)
+		for i in range(1, len(student_answers)):
+			if i != 0:
+				#name = question_id
+				#value = answer_id or answer to open question
+				key = int(student_answers[i]['name'])
+				#check if question_id belongs to quiz
+				if key in quiz_data.keys():
+					if quiz_data[key]['qtype'] != 'open' and quiz_data[key]['qtype'] != 'compare':
+						#check if answer_id belongs to question
+						answer_id = int(student_answers[i]['value'])
+						if answer_id in quiz_data[key]['answers'].keys():
+							points += float(quiz_data[key]['answers'][answer_id])
+							#create record 
+							sar.save_answer(solve_info_id, key, answer_id)
+					else:
+						answer = student_answers[i]['value']
+						if quiz_data[key]['qtype'] == 'open':
+							is_fully_checked = False
+							soar.save_answer(solve_info_id, key, answer, 0)
+						if(len(answer)):
+							if quiz_data[key]['qtype'] == 'compare':
+								points_compare = helper.check_student_compare_answer(key, str(answer))
+								points += points_compare
+								#save answer + compare algorithm = points
+								soar.save_answer(solve_info_id, key, answer, points_compare)
+		qsrr.finish_quiz(pk, request.user.id, points, is_fully_checked)
+		qr = repo.QuizRepository(Quiz)
+		course_id = qr.get_course_id(pk)
+		return JsonResponse({
+			'success': True,
+			'url': reverse('students:view_course_active_quizzes', kwargs={'pk': course_id}), #, args=[{'courses': courses}]
+			})
+	raise Http404
 
 @login_required
 @student_required
 def student_view_quiz_info(request, pk, template_name='students/quiz_info.html'):
+	cpr = repo.CourseParticipantsRepository(CourseParticipants)
+	is_in_joined_courses = cpr.is_quiz_in_joined_active_courses(pk, request.user.id)
+	if not is_in_joined_courses:
+		raise Http404
+
 	quiz= get_object_or_404(Quiz, pk=pk)
 	quizzesR = repo.QuizRepository(Quiz)
 	owner_id = quizzesR.get_owner_id(pk)

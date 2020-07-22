@@ -33,7 +33,9 @@
 					</div><!-- /.modal-content -->
 			</div><!-- /.modal-dialog -->
 		</div><!-- /.modal -->
-	<a href="{% url 'teachers:question_add' quiz %}" class="btn btn-primary delete mb-3" role="button">Add Question</a>
+		{% if quiz_is_active == False %}
+			<a href="{% url 'teachers:question_add' quiz %}" class="btn btn-primary delete mb-3" role="button">Add Question</a>
+		{% endif %}
 	<div class="card">
 		<table class="table table-sm">
 			<thead>

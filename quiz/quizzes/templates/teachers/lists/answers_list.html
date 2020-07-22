@@ -19,25 +19,28 @@
 			</div><!-- /.modal-dialog -->
 		</div><!-- /.modal -->
 			<table class="table table-striped table-sm" id="my_answers">
-					<h1>Add answer to question</h1>
-					{% for q in question %}
-						<h3 id="question_points" name = "{{q.points}}">Question points: {{q.points}}</h3>
-						<h3>{{q.name}}</h3>
+
+				<h1>Add answer to question</h1>
+				{% for q in question %}
+					<h2>{{q.name}}</h2>
+					<h3 id="question_points" name = "{{q.points}}">Question points: {{q.points}}</h3>
 				{% endfor %}
 				<br>
 				<div class="container-fluid add_form">
+					{%if quiz_is_active == False %}
 						<form id="answers-form">
-								<div class="row">
-										{% csrf_token %}
-										{% for field in form %}
+							<div class="row">
+									{% csrf_token %}
+									{% for field in form %}
 										<div class="form-group col-4">
-												<label class="col-12">{{ field.label }}</label>
-												{{ field }}
+											<label class="col-12">{{ field.label }}</label>
+											{{ field }}
 										</div>
-										{% endfor %}
-										<input type="submit" class="btn btn-primary" value="Add Answer" />
-								</div>
+									{% endfor %}
+									<input type="submit" class="btn btn-primary" value="Add Answer" />
+							</div>
 						<form>
+					{% endif %}		
 					</div>
 				 		<h1>Answers list</h1>
 						<thead>

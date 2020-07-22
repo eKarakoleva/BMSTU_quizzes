@@ -156,7 +156,9 @@ def quiz_add(request, pk):
 			quiz = form.save(commit=False)
 			quiz.course = course
 			quiz.owner = request.user
-			if(form.cleaned_data["max_points"] <= free_points):
+			max_points = form.cleaned_data["max_points"]
+			if(max_points <= free_points):
+				quiz.max_points = round(max_points, 1)
 				quiz.save()
 				messages.success(request, 'You may now add question/options to the quiz.')
 				return redirect('/teachers/course/%d/quizzes'%pk)
@@ -203,6 +205,8 @@ def update_quiz(request, pk, template_name='teachers/update/update_quiz.html'):
 		if form.is_valid():
 			quiz = form.save(commit=False)
 			form_points_data = form.cleaned_data["max_points"]
+			quiz.max_points = round(form_points_data, 1)
+
 			if form_points_data > free_points:
 				quiz.max_points = cur_quiz_points
 				messages.error(request, 'Available course points: %f. '%free_points, extra_tags='alert')
@@ -331,7 +335,9 @@ def question_add(request, pk):
 				question.quiz_id = pk
 				if (form.cleaned_data["qtype"] == 'open'):
 					question.done = True 
-				if free_points >= form.cleaned_data["points"]:
+				cleaned_data_user = form.cleaned_data["points"]
+				if free_points >= cleaned_data_user:
+					question.points = round(cleaned_data_user, 1) 
 					question.save()
 					messages.success(request, 'You may now add answers/options to the question.')
 					return redirect('/teachers/course/quiz/%d/questions/'%pk)
@@ -365,7 +371,9 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 		if form.is_valid():
 			same_points = False
 			question = form.save(commit=False)
+
 			form_points_data = form.cleaned_data["points"]
+			question.points = round(form_points_data, 1)
 
 			if (form_points_data > aval_points):
 				question.points = cur_question_points
@@ -439,12 +447,13 @@ def add_answer(request, qpk):
 			questions = repo.QuestionRepository(Questions)
 			question_points = questions.get_question_points(qpk)
 			form_points_data = form.cleaned_data["points"]
+			instance.points = round(form_points_data, 1)
 			free_points = question_points - sum_answers_points
 			free_ponts = round(free_points, 1)
 			instance.question_id = qpk
 
 			left_points = round(free_points - form_points_data, 1)
-
+			instance.points = round(form_points_data, 1)
 			if form_points_data < free_points or left_points == 0.0:
 				instance.save()
 				messages.success(request, 'Success!')
@@ -513,6 +522,7 @@ def update_answer(request, pk, template_name='teachers/update/item_edit_form.htm
 			questions = repo.QuestionRepository(Questions)
 			instance = form.save(commit=False)
 			form_points_data = form.cleaned_data["points"]
+			instance.points =  round(form_points_data, 1)
 			is_done = questions.get_done_status(question_id)
 
 			difference = round(free_points - form_points_data, 1)
@@ -540,10 +550,11 @@ def view_quiz_for_check(request, pk):
 	quiz = repo.QuizRepository(Quiz)
 	owner_id = quiz.get_owner_id(pk)
 	if request.user.id == owner_id:
+		quiz_name = quiz.get_name(pk)
 		qsr = repo.QuizSolveRecordRepository(QuizSolveRecord)
 		quizzes = qsr.get_quizzes_and_students(pk, False)
 		course_id  = quiz.get_course_id(pk)
-		return render(request, 'teachers/lists/check_quiz_list.html', {'quizzes': quizzes, 'course_id': course_id})
+		return render(request, 'teachers/lists/check_quiz_list.html', {'quizzes': quizzes, 'course_id': course_id, 'quiz_name': quiz_name})
 	raise Http404
 
 
@@ -558,8 +569,9 @@ def get_answers_for_check(request, pk, spk):
 	is_participant = cpr.is_user_participant(spk, course_id)
 
 	if request.user.id == owner_id and is_participant:
+		quiz_name = quiz.get_name(pk)
 		answers = open_answers_for_check(pk, spk)
-		return render(request, 'teachers/check_quiz/check_quiz.html', {'answers': answers, 'quiz_id': pk, 'student_id': spk})
+		return render(request, 'teachers/check_quiz/check_quiz.html', {'answers': answers, 'quiz_id': pk, 'student_id': spk, 'quiz_name': quiz_name})
 	raise Http404
 
 @csrf_exempt
@@ -590,7 +602,7 @@ def save_checked_answers(request, pk, spk):
 			for j in range(0, len(open_questions)):
 				question_id = int(new_points[i]['name'])
 				if question_id == open_questions[j]['id']:
-					points = float(new_points[i]['value'])
+					points = round(float(new_points[i]['value']), 1)
 					open_question_points = float(open_questions[j]['points'])
 					if points <= open_question_points:
 						soar.update_answer_points(solve_info_id, question_id, pk, spk, points)

@@ -12,7 +12,7 @@
 		</ol>
 			<a href="{% url 'teachers:quiz_list' course_id %}" class="btn btn-info"><span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span> Go back</a>
 		{% for q in quizzes %}
-		<h3>Quiz points: {{q.max_points}}</h3>
+		<h3 id = "quiz_points" name="{{q.max_points}}">Quiz points: {{q.max_points}}</h3>
 		{% endfor %}
 	</nav>
 		<!-- Modal -->

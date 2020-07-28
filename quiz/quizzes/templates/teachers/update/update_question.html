@@ -23,7 +23,8 @@
                     {% endfor %}
               </div>
               <div class="modal-footer">
-                  <h4 style="text-align:center;">Points avaliable in the quiz: {{aval_points}} <br/> Sum of answer's points: {{sum_answers}}</h4>
+                <h4 id = "explain_points" style="text-align:center;"></h4>
+                  <h4 style="text-align:center;">Sum of answer's points: {{sum_answers}}</h4>
                 <input type="button" id="annulla" class="btn btn-default" data-dismiss="modal" value="Cancel" />
                 <input type="submit" class="btn btn-primary" value="Save" style="margin-bottom: 5px;" />
               </div>
@@ -42,5 +43,10 @@
                     });
                 });
                   
+                var question_points = parseFloat($('#quiz_points').attr('name'))
+                var total_question_points = parseFloat($(".total").text())
+                var cur_points = parseFloat($('#id_points').attr('value'))
+                var aval_points = question_points - total_question_points + cur_points
+                $('#explain_points').text('Points avaliable for the question: ' + aval_points.toFixed(1))
         </script>
 

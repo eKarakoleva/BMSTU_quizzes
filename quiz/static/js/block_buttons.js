@@ -25,5 +25,19 @@ document.onkeydown = function(e) {
   }
 }
 
+$('body').bind('cut copy paste', function (e) {
+	$("#error").fadeIn("slow");
+	setTimeout(function(){
+		$("#error").fadeOut("slow");
+	},2000);
+	return false;
+});
 
+$(document).bind('contextmenu', function (e) {
+	$("#error").fadeIn("slow");
+	setTimeout(function(){
+		$("#error").fadeOut("slow");
+	},2000);
+	return false;
+});
 

@@ -90,7 +90,6 @@ def join_quiz(request, pk, template_name='students/join_quiz.html'):
 		return render(request, template_name, {'id': pk})
 
 
-
 @login_required
 @student_required
 def view_all_joined_couses(request):
@@ -207,8 +206,10 @@ def finish_test(request, pk):
 		solve_info_id = int(solve_info_id)
 		sar = repo.StudentAnswersRepository(StudentAnswers)
 		soar = repo.StudentOpenAnswersRepository(StudentOpenAnswers)
+
 		for i in range(1, len(student_answers)):
 			if i != 0:
+
 				#name = question_id
 				#value = answer_id or answer to open question
 				key = int(student_answers[i]['name'])

@@ -2,6 +2,7 @@ import random
 import string
 import numpy as np
 import re
+import random
 
 import quizzes.repositories as repo
 from quizzes.models import Cafedra, User, Course, CourseParticipants, Quiz, Questions, Answers, StudentOpenAnswers, QuizSolveRecord, StudentAnswers
@@ -27,7 +28,8 @@ def construct_quiz(quiz_id):
 	ar = repo.AnswerRepository(Answers)
 
 	questions = quesrtr.get_by_quiz_id(quiz_id)
-
+	#questions = list(questions)
+	#random.shuffle(questions)
 	quiz = {}
 
 	for question in questions:
@@ -40,6 +42,8 @@ def construct_quiz(quiz_id):
 		if question.qtype != 'open':
 			answers = ar.get_answer_points_and_name_by_question(question.id)
 			count_true = 0
+			#answers = list(answers)
+			#random.shuffle(answers)
 			for answer in answers:
 				temp[question.id]['answers'][answer.id] = {}
 				temp[question.id]['answers'][answer.id]['answer'] = answer.name
@@ -47,7 +51,7 @@ def construct_quiz(quiz_id):
 				if answer.correct == True:
 					count_true += 1
 			temp[question.id]['cor_ans'] = count_true
-		quiz.update(temp)
+		quiz.update(temp)				
 	return quiz
 
 def construct_quiz_teacher(quiz_id):
@@ -77,6 +81,28 @@ def construct_quiz_teacher(quiz_id):
 		quiz.update(temp)
 	return quiz
 
+def construct_main(quiz_id):
+	quesrtr = repo.QuestionRepository(Questions)
+	ar = repo.AnswerRepository(Answers)
+
+	questions = quesrtr.get_id_and_type(quiz_id)
+
+	quiz = {}
+
+	for question in questions:
+		temp = {}
+		temp[question.id] = {}
+		temp[question.id]['qtype'] = question.qtype
+		temp[question.id]['answers'] = {}
+
+		if question.qtype != 'open' and  question.qtype != 'compare':
+			answers = ar.get_answer_points_by_question(question.id)
+			for answer in answers:
+				temp[question.id]['answers'][answer.id] = answer.points
+			
+		quiz.update(temp)
+	return quiz  
+	
 def construct_quiz_student_results(quiz_id, student_id):
 
 	qsrr = repo.QuizSolveRecordRepository(QuizSolveRecord)
@@ -144,28 +170,6 @@ def open_answers_for_check(quiz_id, stud_id):
 				oq['exist'] = True
 				oq['stud_answer'] = student_answer[0]['answer']
 	return open_questions
-
-def construct_main(quiz_id):
-	quesrtr = repo.QuestionRepository(Questions)
-	ar = repo.AnswerRepository(Answers)
-
-	questions = quesrtr.get_id_and_type(quiz_id)
-
-	quiz = {}
-
-	for question in questions:
-		temp = {}
-		temp[question.id] = {}
-		temp[question.id]['qtype'] = question.qtype
-		temp[question.id]['answers'] = {}
-
-		if question.qtype != 'open' != 'compare':
-			answers = ar.get_answer_points_by_question(question.id)
-			for answer in answers:
-				temp[question.id]['answers'][answer.id] = answer.points
-			
-		quiz.update(temp)
-	return quiz  
 
 def prepare_string(str1, str2):
 	#remove special charaters from string

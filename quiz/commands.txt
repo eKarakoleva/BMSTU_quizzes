@@ -14,6 +14,7 @@ July 14, 2020 12:11:22
 python -m pip install Django
 pip install psycopg2
 pip install numpy
+
 http://127.0.0.1:8000/students/course/quiz/1/take/
 <a href="{% url 'students:take_quiz' q.id %}" class="btn btn-success btn-lg">Yes, I'm sure</a>
 

@@ -68,10 +68,10 @@ def view_course_quizzes(request, pk):
 	quiz = repo.QuizRepository(Quiz)
 	quizzes = quiz.get_by_user_course(request.user, pk)
 	courses = repo.CourseRepository(Course)
-	course_name = courses.get_name(pk)
+	course_name, course_points = courses.get_name_and_points(pk)
 	owner_id = courses.get_owner_id(pk)
 	if(request.user.id == owner_id):
-		return render(request, 'teachers/lists/quiz_list.html', {'quizzes': quizzes, 'course_id': pk, 'course_name': course_name})
+		return render(request, 'teachers/lists/quiz_list.html', {'quizzes': quizzes, 'course_id': pk, 'course_name': course_name, 'course_points': course_points})
 	raise Http404
 
 @method_decorator([login_required, teacher_required], name='dispatch')
@@ -100,7 +100,8 @@ def update_course(request, pk, template_name='teachers/update/update_course.html
 			points = form.cleaned_data["points"]
 			quiz = repo.QuizRepository(Quiz)
 			all_quiz_points = quiz.get_all_quiz_points(pk)
-			if(all_quiz_points <= points):
+			difference = round(points - all_quiz_points, 1)
+			if(difference >= 0):
 				form.save()
 				messages.success(request, 'Course is updated')
 			else:
@@ -150,6 +151,8 @@ def quiz_add(request, pk):
 	quizzes = repo.QuizRepository(Quiz)
 	all_q_points = quizzes.get_all_quiz_points(pk)
 	free_points = c_points - all_q_points
+	free_points = round(free_points, 1)
+
 	if request.method == 'POST':
 		form = QuizForm(request.POST)
 		if form.is_valid():
@@ -157,17 +160,17 @@ def quiz_add(request, pk):
 			quiz.course = course
 			quiz.owner = request.user
 			max_points = form.cleaned_data["max_points"]
-			if(max_points <= free_points):
+
+			difference = round(max_points - free_points, 1)
+			if(difference <= 0):
 				quiz.max_points = round(max_points, 1)
 				quiz.save()
 				messages.success(request, 'You may now add question/options to the quiz.')
 				return redirect('/teachers/course/%d/quizzes'%pk)
 			else:
 				messages.error(request, 'You put more points than you have left. Available points: %f'%free_points, extra_tags='alert')
-			
 	else:
 		form = QuizForm()
-
 	return render(request, 'teachers/add/quiz_add.html', {'course': course, 'form': form, 'free_points':free_points })
 
 @method_decorator([login_required, teacher_required], name='dispatch')
@@ -191,31 +194,35 @@ def update_quiz(request, pk, template_name='teachers/update/update_quiz.html'):
 	quizzes = repo.QuizRepository(Quiz)
 	owner_id = quizzes.get_owner_id(pk)
 	is_active = quizzes.is_active(pk)
-	if request.user.id == owner_id and not is_active:
 
-		course_id = quizzes.get_course_id(pk)
-		all_q_points = quizzes.get_all_quiz_points(course_id)
-		cur_quiz_points = quizzes.get_quiz_points(pk)
-		c_points = quizzes.get_course_points(pk)
-		free_points = c_points - all_q_points + cur_quiz_points
+	if request.user.id == owner_id and not is_active:
 		questions = repo.QuestionRepository(Questions)
 		sum_question_points = questions.sum_all_quiz_questions_points(pk)
+		cur_quiz_points = quizzes.get_quiz_points(pk)
 
 		form = QuizForm(request.POST or None, instance=quiz)
 		if form.is_valid():
 			quiz = form.save(commit=False)
 			form_points_data = form.cleaned_data["max_points"]
 			quiz.max_points = round(form_points_data, 1)
+			if_points_changed = round(form_points_data - cur_quiz_points, 1)
 
-			if form_points_data > free_points:
-				quiz.max_points = cur_quiz_points
-				messages.error(request, 'Available course points: %f. '%free_points, extra_tags='alert')
-			if sum_question_points > form_points_data:
-				quiz.max_points = cur_quiz_points
-				messages.error(request, 'Question points in this quiz are: %f. '%sum_question_points, extra_tags='alert')
+			if if_points_changed != 0:
+				course_id = quizzes.get_course_id(pk)
+				all_q_points = quizzes.get_all_quiz_points(course_id)
+				c_points = quizzes.get_course_points(pk)
+				free_points = c_points - all_q_points + cur_quiz_points
+				free_points = round(free_points, 1)
+
+				if form_points_data > free_points:
+					quiz.max_points = cur_quiz_points
+					messages.error(request, 'Available course points: %f. '%free_points, extra_tags='alert')
+				if sum_question_points > form_points_data:
+					quiz.max_points = cur_quiz_points
+					messages.error(request, 'Question points in this quiz are: %f. '%sum_question_points, extra_tags='alert')
 			quiz.save()
 			return HttpResponse(render_to_string('teachers/update/item_edit_form_success.html'))
-		return render(request, template_name, {'form':form, 'id': pk, 'free_points': free_points, 'sum_questions_points': sum_question_points})
+		return render(request, template_name, {'form':form, 'id': pk, 'sum_questions_points': sum_question_points})
 	raise Http404
 
 @login_required
@@ -319,15 +326,17 @@ def view_question_info(request, pk, template_name='teachers/info/question_info.h
 @teacher_required
 def question_add(request, pk):
 	quiz= get_object_or_404(Quiz, pk=pk)
-	questionR = repo.QuestionRepository(Questions)
-	quiz_points = quiz.max_points
 	owner_id = quiz.owner_id
 	is_active = quiz.is_active
-	sum_questions_points = questionR.sum_all_quiz_questions_points(pk)
 
-	free_points = quiz_points - sum_questions_points
-	free_points = round(free_points, 1)
 	if request.user.id == owner_id and not is_active:
+		questionR = repo.QuestionRepository(Questions)
+		quiz_points = quiz.max_points
+		sum_questions_points = questionR.sum_all_quiz_questions_points(pk)
+
+		free_points = quiz_points - sum_questions_points
+		free_points = round(free_points, 1)
+
 		if request.method == 'POST':
 			form = QuestionForm(request.POST)
 			if form.is_valid():
@@ -343,7 +352,6 @@ def question_add(request, pk):
 					return redirect('/teachers/course/quiz/%d/questions/'%pk)
 				else:
 					messages.error(request, 'You put more points than you have left. Available points: %f'%free_points, extra_tags='alert')
-
 		else:
 			form = QuestionForm()
 		return render(request, 'teachers/add/question_add.html', {'form': form, 'free_points': free_points, 'quiz_id': quiz.id})
@@ -355,48 +363,59 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 	question= get_object_or_404(Questions, pk=pk)
 	questions = repo.QuestionRepository(Questions)
 	owner_id = questions.get_owner_id(pk)
-
 	is_actve = questions.get_quiz_status(pk)
-	if request.user.id == owner_id and not is_actve:
 
-		answers = repo.AnswerRepository(Answers)
-		sum_answers_points = answers.sum_all_question_answers_points(pk)
-		quiz_id = questions.get_quiz_id(pk)
-		sum_quiz_questions = questions.sum_all_quiz_questions_points(quiz_id)
-		quiz_points = questions.get_quiz_points(pk)
+	if request.user.id == owner_id and not is_actve:
 		cur_question_points = questions.get_question_points(pk)
-		aval_points = quiz_points - sum_quiz_questions + cur_question_points
-		aval_points = round(aval_points, 1)
+		answers = repo.AnswerRepository(Answers)
+		sum_answers_points, exist = answers.sum_all_question_answers_points_if_exist(pk)
+
 		form = QuestionForm(request.POST or None, instance=question)
 		if form.is_valid():
 			same_points = False
 			question = form.save(commit=False)
 
 			form_points_data = form.cleaned_data["points"]
-			question.points = round(form_points_data, 1)
+			if_points_changed = round(form_points_data - cur_question_points, 1)
 
-			if (form_points_data > aval_points):
-				question.points = cur_question_points
-				same_points = True
-				messages.error(request, 'Available course points: %f. '%aval_points)
-			if (form_points_data < sum_answers_points):
-				question.points = cur_question_points
-				messages.error(request, 'Answer points in this question are: %f. '%sum_answers_points)
-			question.save()
-			is_done = questions.get_done_status(pk)
+			if if_points_changed != 0:
+				question.points = round(form_points_data, 1)
+
+				quiz_id = questions.get_quiz_id(pk)
+				sum_quiz_questions = questions.sum_all_quiz_questions_points(quiz_id)
+				quiz_points = questions.get_quiz_points(pk)
+				aval_points = quiz_points - sum_quiz_questions + cur_question_points
+				aval_points = round(aval_points, 1)
+
+				if (form_points_data > aval_points):
+					question.points = cur_question_points
+					same_points = True
+					messages.error(request, 'Available course points: %f. '%aval_points)
+				if (form_points_data < sum_answers_points):
+					question.points = cur_question_points
+					messages.error(request, 'Answer points in this question are: %f. '%sum_answers_points)
+				is_done = questions.get_done_status(pk)
+				
+				if form_points_data > sum_answers_points and not same_points:
+					if is_done == True:
+						questions.update_is_done(pk, False)
+				else:
+					if is_done == False and form_points_data == sum_answers_points:
+						questions.update_is_done(pk, True)
 			
-			if form_points_data > sum_answers_points and not same_points:
-
-				if is_done == True:
-					questions.update_is_done(pk, False)
-			else:
-				if is_done == False and form_points_data == sum_answers_points:
-					questions.update_is_done(pk, True)
-
-			if form.cleaned_data["qtype"] == 'open':
-				questions.update_is_done(pk, True)
+			update_type = form.cleaned_data["qtype"]
+			if update_type == 'open' or update_type == 'compare':
+				qtype = questions.get_question_type(pk)
+				if qtype != 'open' and qtype != 'compare':
+					if not exist:
+						questions.update_is_done(pk, True)
+					else:
+						question.qtype = qtype
+						messages.error(request, 'Can not change type of the question to open or compare. There are answers in this question!')
+					
+			question.save()
 			return HttpResponse(render_to_string('teachers/update/item_edit_form_success.html'))
-		return render(request, template_name, {'form':form, 'id': pk, 'aval_points': aval_points, 'sum_answers': sum_answers_points})
+		return render(request, template_name, {'form':form, 'id': pk, 'sum_answers': sum_answers_points})
 	raise Http404
 
 @method_decorator([login_required, teacher_required], name='dispatch')
@@ -416,19 +435,21 @@ class QuestionDelete(DeleteView):
 @teacher_required
 def AnswersView(request, qpk):
 	form = AnswerForm()
-	answersR = repo.AnswerRepository(Answers)
-	answers = answersR.get_by_id_ordered(qpk)
+
 	questions = repo.QuestionRepository(Questions)
 	question = questions.get_by_id(qpk)
 	owner_id = questions.get_owner_id(qpk)
-	quiz_is_active = questions.get_quiz_status(qpk)
-	quiz_id = questions.get_quiz_id(qpk)
 
 	if question:
 		qtype = question[0].qtype
 	else:
 		qtype = "NONE"
+		
 	if request.user.id == owner_id and qtype != 'open':
+		answersR = repo.AnswerRepository(Answers)
+		answers = answersR.get_by_id_ordered(qpk)
+		quiz_is_active = questions.get_quiz_status(qpk)
+		quiz_id = questions.get_quiz_id(qpk)
 		return render(request, "teachers/lists/answers_list.html", {"form": form, "answers": answers, "question_id": qpk, "question": question, 'quiz_is_active': quiz_is_active, 'quiz_id': quiz_id})
 	raise Http404
 
@@ -511,36 +532,40 @@ def update_answer(request, pk, template_name='teachers/update/item_edit_form.htm
 	if request.user.id == owner_id:
 		form = AnswerForm(request.POST or None, instance=answer)
 
-		question_id = answersR.get_question_id(pk)
-		sum_answers_points = answersR.sum_all_question_answers_points(question_id)
-		question_points = answersR.get_question_points(question_id)
-		answer_points = answersR.get_answer_points(pk)
-		free_points = question_points - sum_answers_points + answer_points
-		free_points = round(free_points, 1)
-		if form.is_valid():
-
-			questions = repo.QuestionRepository(Questions)
+		if form.is_valid():	
 			instance = form.save(commit=False)
 			form_points_data = form.cleaned_data["points"]
-			instance.points =  round(form_points_data, 1)
-			is_done = questions.get_done_status(question_id)
+			answer_points = answersR.get_answer_points(pk)
 
-			difference = round(free_points - form_points_data, 1)
-			
-			if difference >= 0:
-				if(difference == 0):
-					if is_done == False: 
-						questions.update_is_done(question_id, True)
+			are_points_changed = round(answer_points - form_points_data, 1)
+			if are_points_changed != 0:
+				questions = repo.QuestionRepository(Questions)
+				question_id = answersR.get_question_id(pk)
+				sum_answers_points = answersR.sum_all_question_answers_points(question_id)
+				question_points = answersR.get_question_points(question_id)
+				answer_points = answersR.get_answer_points(pk)
+				free_points = question_points - sum_answers_points + answer_points
+				free_points = round(free_points, 1)
+
+				instance.points =  round(form_points_data, 1)
+				is_done = questions.get_done_status(question_id)
+
+				difference = round(free_points - form_points_data, 1)
+				
+				if difference >= 0:
+					if(difference == 0):
+						if is_done == False: 
+							questions.update_is_done(question_id, True)
+					else:
+						if is_done == True:
+							questions.update_is_done(question_id, False)
+					messages.success(request, 'Success!')
 				else:
-					if is_done == True:
-						questions.update_is_done(question_id, False)
-				messages.success(request, 'Success!')
-			else:
-				instance.points = answer_points
-				messages.error(request, 'You put more points than you have left. Available points: %f'%free_points)
+					instance.points = answer_points
+					messages.error(request, 'You put more points than you have left. Available points: %f'%free_points)
 			instance.save()
 			return HttpResponse(render_to_string('teachers/update/item_edit_form_success.html'))
-		return render(request, template_name, {'form':form, 'id': pk, 'free_points': free_points, 'question_points': question_points})
+		return render(request, template_name, {'form':form, 'id': pk})
 	raise Http404
 
 

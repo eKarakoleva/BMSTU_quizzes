@@ -117,6 +117,15 @@ class CourseRepository(object):
 			name = name[0]['name']
 		return name
 
+	def get_name_and_points(self, course_id):
+		name_points = self.model.objects.filter(id = course_id).values('name', 'points')
+		name = "NONE"
+		points = 0
+		if name_points:
+			name = name_points[0]['name']
+			points = name_points[0]['points']
+		return name, points
+
 	def get_all_active(self):
 		return self.model.objects.filter(is_active=True)
 
@@ -267,6 +276,14 @@ class AnswerRepository(object):
 		if(not points):
 			points = 0
 		return points
+
+	def sum_all_question_answers_points_if_exist(self, question_id):
+		points = self.model.objects.filter(question_id=question_id).aggregate(Sum('points'))['points__sum']
+		exist = True
+		if(not points):
+			points = 0
+			exist = False
+		return points, exist
 
 	#only for update methods
 	def get_question_points(self, question_id):

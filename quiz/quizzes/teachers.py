@@ -366,21 +366,25 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 	is_actve = questions.get_quiz_status(pk)
 
 	if request.user.id == owner_id and not is_actve:
+
+		
 		cur_question_points = questions.get_question_points(pk)
 		answers = repo.AnswerRepository(Answers)
 		sum_answers_points, exist = answers.sum_all_question_answers_points_if_exist(pk)
 
 		form = QuestionForm(request.POST or None, instance=question)
 		if form.is_valid():
-			same_points = False
+			update_status = -1
+			
 			question = form.save(commit=False)
 
 			form_points_data = form.cleaned_data["points"]
 			if_points_changed = round(form_points_data - cur_question_points, 1)
 
 			if if_points_changed != 0:
-				question.points = round(form_points_data, 1)
 
+				same_points = False
+				question.points = round(form_points_data, 1)
 				quiz_id = questions.get_quiz_id(pk)
 				sum_quiz_questions = questions.sum_all_quiz_questions_points(quiz_id)
 				quiz_points = questions.get_quiz_points(pk)
@@ -398,22 +402,33 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 				
 				if form_points_data > sum_answers_points and not same_points:
 					if is_done == True:
-						questions.update_is_done(pk, False)
+						update_status = 0
+						#questions.update_is_done(pk, False)
 				else:
 					if is_done == False and form_points_data == sum_answers_points:
-						questions.update_is_done(pk, True)
+						update_status = 1
+						#questions.update_is_done(pk, True)
 			
+
 			update_type = form.cleaned_data["qtype"]
+
 			if update_type == 'open' or update_type == 'compare':
 				qtype = questions.get_question_type(pk)
 				if qtype != 'open' and qtype != 'compare':
 					if not exist:
-						questions.update_is_done(pk, True)
+						update_status = 1
 					else:
 						question.qtype = qtype
 						messages.error(request, 'Can not change type of the question to open or compare. There are answers in this question!')
+			question.save()	
+
+			if update_status == 1:
+				questions.update_is_done(pk, True)
+			else:
+				if update_status == 0:
+					questions.update_is_done(pk, False)
+
 					
-			question.save()
 			return HttpResponse(render_to_string('teachers/update/item_edit_form_success.html'))
 		return render(request, template_name, {'form':form, 'id': pk, 'sum_answers': sum_answers_points})
 	raise Http404

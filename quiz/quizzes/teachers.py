@@ -366,8 +366,6 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 	is_actve = questions.get_quiz_status(pk)
 
 	if request.user.id == owner_id and not is_actve:
-
-		
 		cur_question_points = questions.get_question_points(pk)
 		answers = repo.AnswerRepository(Answers)
 		sum_answers_points, exist = answers.sum_all_question_answers_points_if_exist(pk)
@@ -375,7 +373,6 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 		form = QuestionForm(request.POST or None, instance=question)
 		if form.is_valid():
 			update_status = -1
-			
 			question = form.save(commit=False)
 
 			form_points_data = form.cleaned_data["points"]
@@ -409,9 +406,7 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 						update_status = 1
 						#questions.update_is_done(pk, True)
 			
-
 			update_type = form.cleaned_data["qtype"]
-
 			if update_type == 'open' or update_type == 'compare':
 				qtype = questions.get_question_type(pk)
 				if qtype != 'open' and qtype != 'compare':
@@ -427,8 +422,7 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 			else:
 				if update_status == 0:
 					questions.update_is_done(pk, False)
-
-					
+			
 			return HttpResponse(render_to_string('teachers/update/item_edit_form_success.html'))
 		return render(request, template_name, {'form':form, 'id': pk, 'sum_answers': sum_answers_points})
 	raise Http404

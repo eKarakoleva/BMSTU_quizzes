@@ -1,7 +1,15 @@
 from django.contrib import admin
-from quizzes.models import Cafedra, Course, User
+import quizzes.models as qm
 
 # Register your models here.
-admin.site.register(Cafedra)
-admin.site.register(User)
-admin.site.register(Course)
+admin.site.register(qm.Cafedra)
+admin.site.register(qm.User)
+admin.site.register(qm.QuizSolveRecord)
+'''
+admin.site.register(qm.Course)
+admin.site.register(qm.Quiz)
+admin.site.register(qm.Questions)
+admin.site.register(qm.Answers)
+admin.site.register(qm.CourseParticipants)
+admin.site.register(qm.QuizSolveRecord)
+'''

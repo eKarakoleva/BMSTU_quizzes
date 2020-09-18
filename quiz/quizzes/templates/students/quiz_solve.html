@@ -26,8 +26,11 @@
 <form method="post">{% csrf_token %}
 	<ol>
 	  {% for question_id, qinfo in tests.items %}
-		
-		  <li style="font-size:19px"> <h3> {{qinfo.qname}}</h3> </li>
+	  
+		<li style="font-size:19px"> <h3> {{qinfo.qname}}</h3> </li>
+		{% if qinfo.description %}
+			<h4><b>Instruction: </b> {{qinfo.description}} </h4>
+		{% endif %}
 	   
 			<div id="{{question_id}}"> 
 				<ul class="list-group">

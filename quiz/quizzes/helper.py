@@ -42,8 +42,8 @@ def construct_quiz(quiz_id):
 		if question.qtype != 'open':
 			answers = ar.get_answer_points_and_name_by_question(question.id)
 			count_true = 0
-			#answers = list(answers)
-			#random.shuffle(answers)
+			answers = list(answers)
+			random.shuffle(answers)
 			for answer in answers:
 				temp[question.id]['answers'][answer.id] = {}
 				temp[question.id]['answers'][answer.id]['answer'] = answer.name
@@ -68,6 +68,7 @@ def construct_quiz_teacher(quiz_id):
 		temp[question.id]['qname'] = question.name
 		temp[question.id]['qtype'] = question.qtype
 		temp[question.id]['points'] = question.points
+		temp[question.id]['description'] = question.description
 		temp[question.id]['answers'] = {}
 
 		if question.qtype != 'open':
@@ -127,6 +128,7 @@ def construct_quiz_student_results(quiz_id, student_id):
 			temp[question.id]['qname'] = question.name
 			temp[question.id]['qtype'] = question.qtype
 			temp[question.id]['points'] = question.points
+			temp[question.id]['description'] = question.description
 			temp[question.id]['answers'] = {}
 
 

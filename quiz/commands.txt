@@ -4,30 +4,6 @@ python manage.py makemigrations quizzes
 python manage.py sqlmigrate quizzes 0001
 venv\Scripts\activate
 
-#raise Exception({owner_id})
-python manage.py graph_models trees -o test.png
-
 ctrl + f5 - reload css
 
-July 14, 2020 12:11:22
 
-python -m pip install Django
-pip install psycopg2
-pip install numpy
-
-http://127.0.0.1:8000/students/course/quiz/1/take/
-<a href="{% url 'students:take_quiz' q.id %}" class="btn btn-success btn-lg">Yes, I'm sure</a>
-
-	function hide_show_form() {
-		sum_answers = parseFloat($(".total").text());
-		question_points = parseFloat($("#question_points").attr("name"));
-		if (question_points - sum_answers == 0){
-			$(".add_form").hide();
-			$("#full").show();
-		}
-		else{
-			$(".add_form").show();
-			$("#full").hide();
-		}
-	}
-	hide_show_form();

@@ -101,12 +101,13 @@ class CourseParticipants(models.Model):
 	join_date = models.DateTimeField(auto_now=True, unique=False)
 
 	def __str__(self):
-		return self.name
+		return '{} --- {} '.format(self.user.username, self.course.name)
+
 
 class QuizSolveRecord(models.Model):
 	
 	def __str__(self):
-		return self.name
+		return '{} --- {} '.format(self.student.username, self.quiz.name)
 
 	quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='qsrquiz_id', unique=False)
 	student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='student_id', unique=False)
@@ -118,16 +119,12 @@ class QuizSolveRecord(models.Model):
 
 
 class StudentAnswers(models.Model):
-	def __str__(self):
-		return self.name
 
 	solve_info = models.ForeignKey(QuizSolveRecord, on_delete=models.CASCADE, related_name='sasolve_info', unique=False)
 	question = models.ForeignKey(Questions, on_delete=models.CASCADE, related_name='answer_question', unique=False)
 	answer = models.ForeignKey(Answers, on_delete=models.CASCADE, related_name='studanswer_id', unique=False)
 
 class StudentOpenAnswers(models.Model):
-	def __str__(self):
-		return self.name
 
 	solve_info = models.ForeignKey(QuizSolveRecord, on_delete=models.CASCADE, related_name='sosolve_info', unique=False)
 	question = models.ForeignKey(Questions, on_delete=models.CASCADE, related_name='oanswer_question', unique=False)

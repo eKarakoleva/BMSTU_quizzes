@@ -24,6 +24,9 @@
 			  {% for question_id, qinfo in tests.items %}
 				
 				  <li style="font-size:19px"> <h3> {{qinfo.qname}} </h3> </li>
+				  {% if qinfo.description %}
+				  <h4><b>Instruction: </b> {{qinfo.description}} </h4>
+				  {% endif %}
 				  <h4> {{qinfo.points}} points</h4>
 				 
 			   
@@ -48,12 +51,9 @@
 								{%endif%} 
 
 								{% if qinfo.qtype == 'compare' %}
-
-										<li class="list-group-item" > {{answer.answer}}  -  <strong>{{answer.points}} points</strong></li>
-									
-	
+									<li class="list-group-item" > {{answer.answer}}  -  <strong>{{answer.points}} points</strong></li>
 								{%endif%} 
-										  
+								  
 							{% endfor %}
 						</ul> 
 						{% if qinfo.qtype == 'open'%}

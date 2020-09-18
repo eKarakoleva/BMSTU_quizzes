@@ -167,7 +167,7 @@ def take_quiz(request, pk):
 
 def view_course_active_quizzes(request, pk):
 	cpr = repo.CourseParticipantsRepository(CourseParticipants)
-	is_in_joined_courses = cpr.is_quiz_in_joined_active_courses(pk, request.user.id)
+	is_in_joined_courses = cpr.is_user_participant(request.user.id, pk)
 	if not is_in_joined_courses:
 		raise Http404
 

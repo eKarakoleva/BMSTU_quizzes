@@ -310,17 +310,21 @@ class CourseParticipantsRepository(object):
 
 	def get_joined_courses(self, user_id):
 		courses = self.model.objects.filter(user_id=user_id).select_related('course').filter(course__is_active = True)
-		owner_id = User.objects.filter(is_teacher=True).values('id','first_name', 'last_name')
+		owner = User.objects.filter(is_teacher=True).values('id','first_name', 'last_name')
 
 		courses = list(courses)
-		owners = list(owner_id)
+		owners = list(owner)
 
 		for course in courses:
 			for owner in owners:
-				if course.course.id == owner['id']:
+				course.course.owner_ln = "NONE"
+				course.course.owner_fn = "NONE"
+
+				if course.course.owner_id == owner['id']:
 					course.course.owner_ln = owner['last_name']
 					course.course.owner_fn = owner['first_name']
 					break
+
 		return courses
 
 	def is_quiz_in_joined_active_courses(self, quiz_id ,user_id):

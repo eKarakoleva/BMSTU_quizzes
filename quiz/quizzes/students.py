@@ -174,7 +174,7 @@ def view_course_active_quizzes(request, pk):
 	quiz = repo.QuizRepository(Quiz)
 	quizzes = quiz.get_active_quizzes_student_info(pk, request.user.id)
 	if not quizzes:
-		raise Http404
+		course_name = ""
 	else:
 		course_name = quizzes[0].course
 

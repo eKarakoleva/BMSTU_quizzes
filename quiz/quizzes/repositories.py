@@ -317,9 +317,6 @@ class CourseParticipantsRepository(object):
 
 		for course in courses:
 			for owner in owners:
-				course.course.owner_ln = "NONE"
-				course.course.owner_fn = "NONE"
-
 				if course.course.owner_id == owner['id']:
 					course.course.owner_ln = owner['last_name']
 					course.course.owner_fn = owner['first_name']

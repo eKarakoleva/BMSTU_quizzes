@@ -98,9 +98,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2', 
         'OPTIONS': {
-            'options': '-c search_path=test'
+            'options': '-c search_path=quizzes'
         },
-        'NAME': 'test',                      # Or path to database file if using sqlite3.
+        'NAME': 'quizzes',                      # Or path to database file if using sqlite3.
         'USER': 'postgres',                      # Not used with sqlite3.
         'PASSWORD': 'elena',                  # Not used with sqlite3.
         'HOST': 'localhost',                      # Set to empty string for localhost. Not used with sqlite3.

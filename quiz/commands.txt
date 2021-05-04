@@ -3,6 +3,7 @@ py manage.py runserver
 python manage.py makemigrations quizzes
 python manage.py sqlmigrate quizzes 0001
 venv\Scripts\activate
+env\Scripts\activate
 
 ctrl + f5 - reload css
 

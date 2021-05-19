@@ -7,11 +7,13 @@
               <div class="modal-body">
                   <p>Success!</p>
                   <script>
-                    setTimeout(function() { jQuery('#modal').modal('hide'); }, 1000);
-                    $('body').on('hidden.bs.modal', '.modal', function () {
-                        $(this).removeData('bs.modal');
+                    $(document).ready(function () {
+                      setTimeout(function() { jQuery('#modal').modal('hide'); }, 1000);
+                      $('body').on('hidden.bs.modal', '.modal', function () {
+                          $(this).removeData('bs.modal');
+                      });
+                      location.reload();
                     });
-                    location.reload();
                   </script>
               </div>
               <div class="modal-footer">

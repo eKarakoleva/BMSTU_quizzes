@@ -30,7 +30,7 @@
               </div>
         </form>
         <script>
-
+            $(document).ready(function () {
                 var form_options = {
                     target: '#modal',
                     success: function() {  }
@@ -48,6 +48,6 @@
                 var aval_points = question_points - total_answer_points + cur_points
                 $('#explain_points').text('Points avaliable: ' + aval_points.toFixed(1))
 
-
+            });
         </script>
 

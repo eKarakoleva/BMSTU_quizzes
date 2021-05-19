@@ -1,2 +1,14 @@
 venv/
+env/
 migrations/
+TreeTagger/
+__pycache__/
+quiz/__pycache__/
+quiz/quizzes/__pycache__/
+!**/__pycache__/
+__pycache__/
+*.pyc
+grammar\__pycache__\
+grammar\data\
+*.gz
+*.csv

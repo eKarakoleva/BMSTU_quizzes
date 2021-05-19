@@ -26,6 +26,21 @@
 					<h3 id="question_points" name = "{{q.points}}">Question points: {{q.points}}</h3>
 				{% endfor %}
 				<br>
+				{% if qtype == 'grammar'%}
+					{% for points in grammar_points%}
+						<div class="form-group">
+						<label>Spelling points</label>
+						<input class="form-control" value="{{ points.spelling_points}}" readonly>
+						</div>   
+						<div class="form-group">
+						<label>Grammar points</label>
+						<input class="form-control" value="{{ points.grammar_points}}" readonly>
+						<label>Translate points</label>
+						<input class="form-control" value="{{ points.translate_points}}" readonly>
+						</div>   
+					{% endfor %}        
+			  	{% endif %} 
+			  	<br>
 				<div class="container-fluid add_form">
 					{%if quiz_is_active == False %}
 						<form id="answers-form">
@@ -36,10 +51,11 @@
 											<label class="col-12">{{ field.label }}</label>
 											{{ field }}
 										</div>
-									{% endfor %}
+									{% endfor %}  
 									<input type="submit" class="btn btn-primary" value="Add Answer" />
 							</div>
 						<form>
+						
 					{% endif %}		
 					</div>
 				 		<h1>Answers list</h1>
@@ -58,7 +74,7 @@
 								<td class = "cut-text" title="{{answer.name}}">{{answer.name}}</td>
 								<td name = "{{answer.points}}"  class = "add">{{answer.points}}</td>
 								{% if answer.correct %}
-								<td><span class="label label-success">{{answer.correct}}</span></td>
+									<td><span class="label label-success">{{answer.correct}}</span></td>
 								{% else %}
 								<td><span class="label label-danger">{{answer.correct}}</span></td>
 								{% endif %}
@@ -85,6 +101,10 @@
 						</tr>      
 						</tbody>
 				</table>
+				<textarea id="possible-answer" cols="15" rows="4" class="form-control" step="0.1"></textarea>
+				<br>
+				<a id = "test-answer" class="btn btn-primary delete mb-3" role="button">Test</a>
+				<br><br><br>
 		</div>
 	</div>
 </div>
@@ -114,6 +134,7 @@
 				e.preventDefault();
 				// serialize the data for sending the form data.
 				var serializedData = $(this).serialize();
+				console.log(serializedData)
 				// make POST ajax call
 				$.ajax({
 						type: 'POST',
@@ -159,6 +180,21 @@
 			}
 		}
 
+		$( "#test-answer" ).click(function() {
+			var sent_to_check = $('#possible-answer').val()
+			$.ajax({	
+				
+				url: '{% url "teachers:test_grammar" question_id %}',
+				data: {
+					'lang': 'aa',
+					'sents': sent_to_check
+				},
+				dataType: 'json',
+				success: function (data) {
+
+				}
+			});
+		});
 
 
 </script>

@@ -1,11 +1,12 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import (CreateView, DeleteView, DetailView, ListView,UpdateView)
 from quizzes.forms import TeacherSignUpForm, QuizForm, QuestionForm, AnswerForm, CourseForm, QuizActivateForm, QuizInCodeForm, CourseInCodeForm
-from quizzes.models import Cafedra, Course, User, Quiz, Questions, Answers, QuizSolveRecord, CourseParticipants, StudentOpenAnswers
+from quizzes.models import Cafedra, Course, User, Quiz, Questions, Answers, QuizSolveRecord, CourseParticipants, StudentOpenAnswers, GrammarQuestionSanctions, Languages
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages 
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from quizzes.decorators import teacher_required
 from django.http import HttpResponse, JsonResponse, Http404
 
 import quizzes.repositories as repo
@@ -13,13 +14,16 @@ from django.core import serializers
 from django.template.loader import render_to_string
 
 from django.db import connection
-from django.contrib import messages
-from django import forms
+#from django.contrib import messages
+#from django import forms
+from quizzes.grammar.Tokenizer import Tokenizer
+from quizzes.grammar.PoSTagger import PoSTagger
 
 from quizzes.helper import check_grades, generate_code, open_answers_for_check, construct_quiz_teacher, construct_quiz_student_results
-from quizzes.decorators import teacher_required
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 import json
+
+import quizzes.grammarDB.checkerOperations as checkerop
 
 class TeacherSignUpView(CreateView):
 	model = User
@@ -318,8 +322,11 @@ def view_question_info(request, pk, template_name='teachers/info/question_info.h
 	questionR = repo.QuestionRepository(Questions)
 	owner_id = questionR.get_owner_id(pk)
 	questions = questionR.get_by_id(pk)
+	grammar_points = []
+	if questions[0].qtype == 'grammar':
+		grammar_points = questionR.get_grammar_points(pk)
 	if request.user.id == owner_id:
-		return render(request, template_name, {'id': pk, 'questions': questions})
+		return render(request, template_name, {'id': pk, 'questions': questions, 'grammar_points': grammar_points})
 	raise Http404
 
 @login_required
@@ -338,6 +345,8 @@ def question_add(request, pk):
 		free_points = round(free_points, 1)
 
 		if request.method == 'POST':
+			can_save = True
+			is_grammar = False
 			form = QuestionForm(request.POST)
 			if form.is_valid():
 				question = form.save(commit=False)
@@ -347,9 +356,28 @@ def question_add(request, pk):
 				cleaned_data_user = form.cleaned_data["points"]
 				if free_points >= cleaned_data_user:
 					question.points = round(cleaned_data_user, 1) 
-					question.save()
-					messages.success(request, 'You may now add answers/options to the question.')
-					return redirect('/teachers/course/quiz/%d/questions/'%pk)
+					if "spelling-points" in request.POST.keys():
+						is_grammar = True
+						sp = float(request.POST["spelling-points"])
+						gp = float(request.POST["grammar-points"])
+						tp = float(request.POST["translate-points"])
+						lang = request.POST["lang"]
+						langRepo = repo.LanguagesRepository(Languages)
+						lang_query = langRepo.get_language(lang)
+						if lang_query != -1:
+							minus_points = sp + gp + tp
+							if minus_points > cleaned_data_user:
+								can_save = False
+								messages.error(request, 'You cant have spelling and grammar points more that total question points!', extra_tags='alert')
+						else:
+							can_save = False
+					if can_save:
+						question.save()
+						if is_grammar:
+							gsr = repo.GrammarQuestionSanctionsRepository(GrammarQuestionSanctions)
+							gsr.add_grammar_sanctions(question.id, sp, gp, tp, lang_query[0].id)
+						messages.success(request, 'You may now add answers/options to the question.')
+						return redirect('/teachers/course/quiz/%d/questions/'%pk)
 				else:
 					messages.error(request, 'You put more points than you have left. Available points: %f'%free_points, extra_tags='alert')
 		else:
@@ -453,13 +481,17 @@ def AnswersView(request, qpk):
 		qtype = question[0].qtype
 	else:
 		qtype = "NONE"
+
+	grammar_points = []
+	if question[0].qtype == 'grammar':
+		grammar_points = questions.get_grammar_points(qpk)
 		
 	if request.user.id == owner_id and qtype != 'open':
 		answersR = repo.AnswerRepository(Answers)
 		answers = answersR.get_by_id_ordered(qpk)
 		quiz_is_active = questions.get_quiz_status(qpk)
 		quiz_id = questions.get_quiz_id(qpk)
-		return render(request, "teachers/lists/answers_list.html", {"form": form, "answers": answers, "question_id": qpk, "question": question, 'quiz_is_active': quiz_is_active, 'quiz_id': quiz_id})
+		return render(request, "teachers/lists/answers_list.html", {"form": form, "answers": answers, "question_id": qpk, "question": question, 'quiz_is_active': quiz_is_active, 'quiz_id': quiz_id, 'qtype': qtype, 'grammar_points': grammar_points})
 	raise Http404
 
 @login_required
@@ -673,6 +705,11 @@ def quiz_update_in_code(request, pk, template_name='teachers/update/update_in_co
 
 @login_required
 @teacher_required
+def grammar_checker(request):
+	return render(request, 'teachers/grammer_checker.html', {})
+
+@login_required
+@teacher_required
 def course_update_in_code(request, pk, template_name='teachers/update/course_update_in_code.html'):
 	course= get_object_or_404(Course, pk=pk)
 	cr = repo.CourseRepository(Course)
@@ -751,3 +788,23 @@ def course_participants_list(request, pk):
 		return render(request, 'teachers/lists/quiz_participants.html', {'participants': participants, 'course_name': course_name})
 	raise Http404
 
+@teacher_required
+@login_required
+def test_grammar(request, qpk):
+	gqsr = repo.GrammarQuestionSanctionsRepository(GrammarQuestionSanctions)
+	lang_id = gqsr.get_language(qpk)
+	if lang_id != -1:
+		
+		langRepo = repo.LanguagesRepository(Languages)
+		lang = langRepo.get_abr_by_id(lang_id)
+		print("LANG: ", lang)
+		#aa = checkerop.levenshtein_ratio_and_distance('going', 'go', ratio_calc = True)
+		#print("RATIO: ", aa)
+		sents_to_check = request.GET.get('sents', None)
+		print(sents_to_check)
+		ethalonts = checkerop.get_etalons(qpk)
+		checkerop.process_checking(ethalonts, sents_to_check, lang)
+	data = {
+		'status': True
+	}
+	return JsonResponse(data)

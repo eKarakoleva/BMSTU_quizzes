@@ -79,6 +79,7 @@ class Questions(models.Model):
 		('single', 'single'),
 		('compare', 'compare'),
 		('open', 'open'),
+		('grammar', 'grammar'),
 	]
 
 	qtype = models.CharField(max_length=10, choices=QUESTION_TYPES, default='single',)
@@ -131,3 +132,39 @@ class StudentOpenAnswers(models.Model):
 	answer = models.TextField(blank=True)
 	points = models.FloatField(default=0)
 
+
+class Languages(models.Model):
+	name = models.CharField(max_length=15)
+	abr = models.CharField(max_length=6)
+
+class LearnSets(models.Model):
+	set_name = models.TextField()
+	lang = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name='lang_learn_tagset', unique=False)
+	add_date = models.DateTimeField(auto_now_add=True)
+
+class Tagset(models.Model):
+	tag = models.TextField()
+	lang = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name='lang_tagset', unique=False)
+
+class BiGramms(models.Model):
+	tag1 = models.ForeignKey(Tagset, on_delete=models.CASCADE, related_name='tag_bi_1', unique=False, null=True)
+	tag2 = models.ForeignKey(Tagset, on_delete=models.CASCADE, related_name='tag_bi_2', unique=False, null=True)
+	freq = models.CharField(max_length=10)
+	lang = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name='lang_bi', unique=False)
+	learn_set = models.ForeignKey(LearnSets, on_delete=models.CASCADE, related_name='learn_set_bi', unique=False)
+
+class TriGramms(models.Model):
+	tag1 = models.ForeignKey(Tagset, on_delete=models.CASCADE, related_name='tag_tri_1', unique=False, null=True)
+	tag2 = models.ForeignKey(Tagset, on_delete=models.CASCADE, related_name='tag_tri_2', unique=False, null=True)
+	tag3 = models.ForeignKey(Tagset, on_delete=models.CASCADE, related_name='tag_tri_3', unique=False, null=True)
+	freq = models.CharField(max_length=10)
+	lang = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name='lang_tri', unique=False)
+	learn_set = models.ForeignKey(LearnSets, on_delete=models.CASCADE, related_name='learn_set_tri', unique=False)
+
+
+class GrammarQuestionSanctions(models.Model):
+	question = models.ForeignKey(Questions, on_delete=models.CASCADE, related_name='question_id_grammar', unique=False)
+	lang = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name='lang_question', unique=False)
+	spelling_points = models.FloatField(default=0)
+	grammar_points = models.FloatField(default=0)
+	translate_points = models.FloatField(default=0)

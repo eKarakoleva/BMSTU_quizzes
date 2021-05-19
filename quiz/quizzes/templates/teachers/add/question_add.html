@@ -16,7 +16,45 @@
     {% csrf_token %}
     {{ form|crispy }}
     <h4 class="mb-3">Avaliable points: {{free_points}}</h4>
+    <div id = "grammar-options"></div>
     <button type="submit" class="btn btn-success">Save</button>
     <a  href="{% url 'teachers:questions_list' quiz_id %}" class="btn btn-outline-secondary" role="button">Nevermind</a>
   </form>
+
+
+{% block javascript %}
+<script type="text/javascript">
+
+function append_grammar_points() {
+      $('#grammar-options').append('<label class="col-12">Spelling mistakes (points to be taken for a mistake)</label>')
+      $('#grammar-options').append('<input name = "spelling-points" type="number" value="0" step="0.1" class="form-control" required="" id="id_spelling_mistakes">')
+      $('#grammar-options').append('<label class="col-12">Grammar mistakes (points to be taken for a mistake)</label>')
+      $('#grammar-options').append('<input name = "grammar-points" type="number" value="0" step="0.1" class="form-control" required="" id="grammar">')
+      $('#grammar-options').append('<label class="col-12">Translate mistakes (points to be taken for a mistake)</label>')
+      $('#grammar-options').append('<input name = "translate-points" type="number" value="0" step="0.1" class="form-control" required="" id="translate">')
+      $('#grammar-options').append('<label class="col-12">Language</label>')
+      $('#grammar-options').append('\
+      <select name = "lang" class="form-control" id="id_lang">\
+      <option>en</option> \
+      <option>ru</option> \
+      </select>')
+      $('#grammar-options').append('<br>')
+}
+
+var selected_option = $('#id_qtype option').filter(':selected').text();
+
+if (selected_option == 'grammar'){
+  append_grammar_points()
+}
+
+$("#id_qtype").on('change', function() {
+    if ($(this).val() == 'grammar'){
+        console.log('grammar')
+        append_grammar_points()
+      }else{
+        $('#grammar-options').empty()
+      }
+});
+</script>
+{% endblock javascript %}
 {% endblock %}

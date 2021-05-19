@@ -21,8 +21,23 @@
                   <div class="form-group">
                     <label>Points</label>
                     <input class="form-control" value="{{question.points}}" readonly>
-                  </div>            
-                  {% empty %}
+                  </div> 
+                  {% if question.qtype == 'grammar'%}
+                    {% for points in grammar_points%}
+                    <div class="form-group">
+                      <label>Spelling points</label>
+                      <input class="form-control" value="{{ points.spelling_points}}" readonly>
+                    </div>   
+                    <div class="form-group">
+                      <label>Grammar points</label>
+                      <input class="form-control" value="{{ points.grammar_points}}" readonly>
+                    </div>                       <div class="form-group">
+                      <label>Translate points</label>
+                      <input class="form-control" value="{{ points.translate_points}}" readonly>
+                    </div>
+                    {% endfor %}        
+                  {% endif %}           
+              {% empty %}
               <tr>
                 <td class="bg-light text-center font-italic" colspan="5">Something went wrong</td>
               </tr>
@@ -34,7 +49,7 @@
             </div>
         </form>
         <script>
-
+            $(document).ready(function () {
                 var form_options = {
                     target: '#modal',
                     success: function() {  }
@@ -46,6 +61,7 @@
                         $(this).removeData('bs.modal');
                     });
                 });
+              });
 
         </script>
 

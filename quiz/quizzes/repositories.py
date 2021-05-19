@@ -1,5 +1,5 @@
 from django.db.models import Sum
-from quizzes.models import CourseParticipants, User, QuizSolveRecord, Quiz, QuizSolveRecord
+from quizzes.models import CourseParticipants, User, QuizSolveRecord, Quiz, QuizSolveRecord, GrammarQuestionSanctions
 from django.utils import timezone
 import datetime
 
@@ -176,6 +176,9 @@ class QuestionRepository(object):
 
 	def get_by_id(self, qpk):
 		return self.model.objects.filter(id = qpk)
+
+	def get_grammar_points(self, qpk):
+		return GrammarQuestionSanctions.objects.filter(question_id = qpk)
 
 	def get_by_quiz_id(self, quiz_id):
 		return self.model.objects.filter(quiz_id = quiz_id).order_by('-id').reverse()
@@ -518,3 +521,210 @@ class StudentOpenAnswersRepository(object):
 		else:
 			answer = -1
 		return answer
+
+
+class LanguagesRepository(object):
+	def __init__(self, model):
+		self.model = model
+
+	def get_language(self, abr):
+		lang = self.model.objects.filter(abr = abr)
+		if not lang:
+			lang = -1
+		return lang
+
+	def get_all(self):
+		return self.model.objects.all()
+
+	def add_lang(self, lang, abr):
+		return self.model.objects.create(name = lang, abr = abr)
+
+	def get_name_by_abr(self, abr):
+		name = self.model.objects.filter(abr = abr).values('name')
+		if not name:
+			name = -1
+		else:
+			name = name[0]['name']
+		return name
+
+	def get_abr_by_name(self, name):
+		abr = self.model.objects.filter(name = name).values('abr')
+		if not abr:
+			abr = -1
+		else:
+			abr = abr[0]['abr']
+		return abr
+
+	def get_id_by_abr(self, abr):
+		id_lang = self.model.objects.filter(abr = abr).values('id')
+		if not id_lang:
+			id_lang = -1
+		else:
+			id_lang = id_lang[0]['id']
+		return id_lang
+
+	def get_abr_by_id(self, id):
+		lang_abr = self.model.objects.filter(id = id).values('abr')
+		if not lang_abr:
+			lang_abr = -1
+		else:
+			lang_abr = lang_abr[0]['abr']
+		return lang_abr
+
+
+	def get_record_by_abr(self, abr):
+		id_lang = self.model.objects.filter(abr = abr)
+		if not id_lang:
+			id_lang = -1
+		return id_lang
+	
+	def is_empty(self):
+		is_em = False
+		res = self.model.objects.all()[:3]
+		if len(res) == 0:
+			is_em = True
+		return is_em
+
+class LearnSetsRepository(object):
+	def __init__(self, model):
+		self.model = model
+
+	def add_set(self, s_name, language):
+		return self.model.objects.create(set_name= s_name, lang_id = language)
+
+	def get_all(self):
+		return self.model.objects.all()
+
+	def get_set(self, s_name, language):
+		return self.model.objects.filter(set_name= s_name, lang_id = language)
+
+	def is_empty(self):
+		is_em = False
+		res = self.model.objects.all()[:3]
+		if len(res) == 0:
+			is_em = True
+		return is_em
+
+	def is_lang(self, language):
+		is_em = False
+		res = self.model.objects.filter(lang_id = language)[:3]
+		if len(res) == 0:
+			is_em = True
+		return is_em
+
+class TagsetRepository(object):
+	def __init__(self, model):
+		self.model = model
+
+	def add_tag(self, tag_name, lang):
+		return self.model.objects.create(tag= tag_name, lang_id = lang)
+
+	def get_tag_id(self, name):
+		tag_id = self.model.objects.filter(tag = name).values('id')
+		if not tag_id:
+			tag_id = -1
+		else:
+			tag_id = tag_id[0]['id']
+		return tag_id
+
+	def get_tag(self, name):
+		tag_id = self.model.objects.filter(tag = name)
+		if not tag_id:
+			tag_id = -1
+		return tag_id
+	
+	def is_empty(self, lang_id):
+		is_em = False
+		res = self.model.objects.filter(lang_id = lang_id)[:3]
+		if len(res) == 0:
+			is_em = True
+		return is_em
+
+
+class BiGrammsRepository(object):
+	def __init__(self, model):
+		self.model = model
+
+	def add_tag_combination(self, tag1_id, tag2_id, comb_count, lang_id, lrn_set):
+		return self.model.objects.create(tag1= tag1_id,
+										tag2 = tag2_id,
+										freq = comb_count,
+										lang_id = lang_id,
+										learn_set_id = lrn_set)
+
+	def get_combination(self, tag1, tag2):
+		tag_comb = self.model.objects.filter(tag1_id = tag1, tag2_id = tag2)
+		if not tag_comb:
+			tag_comb = -1
+		return tag_comb
+
+	def is_empty(self):
+		is_em = False
+		res = self.model.objects.all()[:3]
+		if len(res) == 0:
+			is_em = True
+		return is_em
+
+	def update_combination_freq(self, rec_id, freq):
+		exists = self.model.objects.filter(id=rec_id)
+		if len(exists) != 0:
+			return self.model.objects.filter(id=exists[0].id).update(freq=int(exists[0].freq) + int(freq))
+		else:
+			return []
+
+class TriGrammsRepository(object):
+	def __init__(self, model):
+		self.model = model
+
+	def add_tag_combination(self, tag1_id, tag2_id, tag3_id, comb_count, lang_id, lrn_set):
+		return self.model.objects.create(tag1= tag1_id,
+										tag2 = tag2_id,
+										tag3 = tag3_id,
+										freq = comb_count,
+										lang_id = lang_id,
+										learn_set_id = lrn_set)
+
+	def is_empty(self):
+		is_em = False
+		res = self.model.objects.all()[:3]
+		if len(res) == 0:
+			is_em = True
+		return is_em
+
+	def get_combination(self, tag1, tag2, tag3):
+		tag_comb = self.model.objects.filter(tag1_id = tag1, tag2_id = tag2, tag3_id = tag3)
+		if not tag_comb:
+			tag_comb = -1
+		return tag_comb
+
+	def update_combination_freq(self, rec_id, freq):
+		exists = self.model.objects.filter(id=rec_id)
+		if len(exists) != 0:
+			return self.model.objects.filter(id=exists[0].id).update(freq=int(exists[0].freq) + int(freq))
+		else:
+			return []
+
+
+class GrammarQuestionSanctionsRepository(object):
+	def __init__(self, model):
+		self.model = model
+
+	def add_grammar_sanctions(self, quest_id, spelling, grammar, translate, lang):
+		return self.model.objects.create(question_id = quest_id, 
+										spelling_points = spelling,
+										grammar_points = grammar,
+										translate_points = translate,
+										lang_id = lang)
+	def get_info(self, quest_id):
+		qginfo = self.model.objects.filter(question_id = quest_id)
+		if not qginfo:
+			qginfo = -1
+		return qginfo
+
+	def get_language(self, quest_id):
+		lang_id = self.model.objects.filter(question_id = quest_id).values('lang_id')
+		if not lang_id:
+			lang_id = -1
+		else:
+			lang_id = lang_id[0]['lang_id']
+		return lang_id

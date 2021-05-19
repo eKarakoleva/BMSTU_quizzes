@@ -78,7 +78,6 @@ def construct_quiz_teacher(quiz_id):
 				temp[question.id]['answers'][answer.id]['answer'] = answer.name
 				temp[question.id]['answers'][answer.id]['points'] = answer.points
 				temp[question.id]['answers'][answer.id]['correct'] = answer.correct
-		
 		quiz.update(temp)
 	return quiz
 
@@ -96,7 +95,7 @@ def construct_main(quiz_id):
 		temp[question.id]['qtype'] = question.qtype
 		temp[question.id]['answers'] = {}
 
-		if question.qtype != 'open' and  question.qtype != 'compare':
+		if question.qtype == 'multiple' or  question.qtype == 'single':
 			answers = ar.get_answer_points_by_question(question.id)
 			for answer in answers:
 				temp[question.id]['answers'][answer.id] = answer.points
@@ -132,7 +131,7 @@ def construct_quiz_student_results(quiz_id, student_id):
 			temp[question.id]['answers'] = {}
 
 
-			if question.qtype != 'open' and question.qtype != 'compare':
+			if question.qtype != 'open' and question.qtype != 'compare' and question.qtype != 'grammar':
 				answers = ar.get_answer_points_and_name_by_question(question.id)
 				for answer in answers:
 					temp[question.id]['answers'][answer.id] = {}

@@ -18,6 +18,7 @@ from django.urls import path, include
 from django.views.generic.base import TemplateView
 from quizzes.teachers import *
 from quizzes.students import *
+from quizzes.adminView import *
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -62,7 +63,8 @@ urlpatterns = [
        path('course/quiz/<int:pk>/student/<int:spk>/view/', student_quiz_view, name = "student_quiz_view"),
        path('course/<int:pk>/participants/list/', course_participants_list, name = "course_participants_list"),
 
-      
+       path('grammar/', grammar_checker, name = "grammar_checker"),
+       path('course/quiz/question/<int:qpk>/answers/add/test_grammar', test_grammar, name = "test_grammar"),
     ], 'quizzes'), namespace='teachers')),
 
     path('students/', include(([
@@ -78,5 +80,11 @@ urlpatterns = [
        path('course/quiz/<int:pk>/graded/view/', graded_quiz_view, name = "graded_quiz_view"),
        
     ], 'quizzes'), namespace='students')),
+
+    path('train/', include(([
+       path('', train_page, name = "train_page"),
+       path('tags/', train, name = "train"),
+       path('progress/', get_progress, name = "get_progress"),
+    ], 'quizzes'), namespace='train')),
 ]
 

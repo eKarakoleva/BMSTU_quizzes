@@ -50,7 +50,7 @@
 									{%endif%} 
 								{%endif%} 
 
-								{% if qinfo.qtype == 'compare' %}
+								{% if qinfo.qtype == 'compare'  or  qinfo.qtype == 'grammar' %}
 									<li class="list-group-item" > {{answer.answer}}  -  <strong>{{answer.points}} points</strong></li>
 								{%endif%} 
 								  

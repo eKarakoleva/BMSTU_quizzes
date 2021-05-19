@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'bootstrap_modal_forms',
     'django_extensions',
+    'rest_framework',
     'quizzes',
 ]
 
@@ -147,6 +148,7 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend', # default
 )
 
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 
@@ -154,6 +156,14 @@ STATIC_URL = '/static/'
 
 LOGIN_REDIRECT_URL = 'index'
 LOGOUT_REDIRECT_URL = 'index'
+
+BACKGROUND_TASK_RUN_ASYNC = True
+BACKGROUND_TASK_ASYNC_THREADS = 20
+
+SESSION_SAVE_EVERY_REQUEST=True
+AUTO_LOGOUT = 52560000
+
+
 
 AUTH_USER_MODEL = 'quizzes.User'
 

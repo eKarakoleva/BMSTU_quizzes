@@ -23,10 +23,11 @@ class Tokenizer:
 
       return text
 
-  def tokenize_word(self, text):
+  def tokenize_word(self, text, prepare = True):
+    if prepare:
       text = self.remove_punctuation(text)
       #text = self.make_downcase(text)
-      return word_tokenize(text, language=self.lang)
+    return word_tokenize(text, language=self.lang)
 
   def tokenize_sent(self, text):
     st = sent_tokenize(text, language=self.lang)
@@ -49,29 +50,36 @@ class Tokenizer:
     #tokens_sent = tok.tokenize_sent()
     ngrams_res = []
     for ts in tokens_sent:
-      n_words = len(self.tokenize_word(ts))
+      n_words = len(self.tokenize_word(ts, prepare))
       if prepare:
         ts = self.prepare_not_self_text(ts)
       if n_words < n:
         if end_tag:
+          ts_temp = END_TOKEN + " " + ts + " " + END_TOKEN
+          ts = ts_temp
+          print("\n\n\nTS: ", ts)
           #ts += " " + END_TOKEN
-          #ngrams_res.append([ts])
-          ngrams_res.append([])
+          ngrams_res.append([ts])
+          #ngrams_res.append([])
       else:
         if end_tag:
-          ts += " " + END_TOKEN
+          #ts += " " + END_TOKEN
+          ts_temp = END_TOKEN + " " + ts + " " + END_TOKEN
+          #ts += END_TOKEN + " " + ts + " " + END_TOKEN
+          ts = ts_temp
+          print("\n\n\nTS: ", ts)
 
-        tokens = [token for token in self.tokenize_word(ts) if token != ""]
+        tokens = [token for token in self.tokenize_word(ts, prepare) if token != ""]
         ngrams = zip(*[tokens[i:] for i in range(n)])
         ngrams_res.append([" ".join(ngram) for ngram in ngrams])
     return ngrams_res
 
   def generate_different_ngrams(self, tokens_, n, unique_ngrams = dict(), end_tag = True):
-
     for i in range(len(tokens_)):
       tokens = tokens_[i]
       if end_tag and END_TOKEN not in tokens:
         tokens.append(END_TOKEN)
+        tokens.insert(0, END_TOKEN)
       ngrams = zip(*[tokens[i:] for i in range(n)])
       ngram_comb =[" ".join(ngram) for ngram in ngrams]
       for nc in ngram_comb:

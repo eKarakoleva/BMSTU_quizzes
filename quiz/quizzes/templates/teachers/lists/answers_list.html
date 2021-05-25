@@ -105,11 +105,36 @@
 				<br>
 				<a id = "test-answer" class="btn btn-primary delete mb-3" role="button">Test</a>
 				<br><br><br>
+				
+				{% if qtype == 'grammar'%}
+				<div id = "error_codes">
+				</div>
+				<div style="overflow-x:auto;">
+					<table id = "grammar-result" class="table">
+						<thead>
+						  <tr>
+							
+						  </tr>
+						</thead>
+						<tbody>
+						  <tr>
+							
+
+		
+						  </tr>
+						</tbody>
+					</table>
+				</div>
+
+				<div id = "corrected_sent">
+
+				</div>
+				{% endif %}
 		</div>
 	</div>
 </div>
 
-	</div>
+
 
 {% block javascript %}
 	<script type="text/javascript">
@@ -191,7 +216,31 @@
 				},
 				dataType: 'json',
 				success: function (data) {
+					$('#grammar-result tbody td').remove()
+					$('#grammar-result thead th').remove()
+					main_header = $("#grammar-result thead tr")
+					$('#error_codes h4').remove()
+					$('#corrected_sent h4').remove()
+					for (const [code, mistake] of Object.entries(data['error_codes'])) {
+						$('#error_codes').append("<h4>" + code + " - " + mistake + "<h4>")
+					}
 
+					console.log(data['error_codes'])
+					for (const [key, value] of Object.entries(data['error_result'])) {
+						
+						console.log(value)
+						for (const [_, info] of Object.entries(value)) {
+							if (info['word'] == "__sent__"){
+								info['word'] = "END"
+							}
+							$("#grammar-result tbody tr").append("<td scope='col'>"+info['word']+"</td>")
+							console.log(info, info['word']);
+							console.log(info, info['error']);
+							main_header.append("<th scope='col'>"+info['error']+"</th>")
+						}
+					}
+
+					$('#corrected_sent').append("<h4> <b>Corrected sent:</b> " + data['corrected_sent']+ "<h4>")
 				}
 			});
 		});

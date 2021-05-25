@@ -803,8 +803,11 @@ def test_grammar(request, qpk):
 		sents_to_check = request.GET.get('sents', None)
 		print(sents_to_check)
 		ethalonts = checkerop.get_etalons(qpk)
-		checkerop.process_checking(ethalonts, sents_to_check, lang)
+		error_struct_result, error_codes, corrected_sent = checkerop.process_checking(ethalonts, sents_to_check, lang)
+
 	data = {
-		'status': True
+		'error_result': error_struct_result,
+		'error_codes': error_codes,
+		'corrected_sent': corrected_sent
 	}
 	return JsonResponse(data)

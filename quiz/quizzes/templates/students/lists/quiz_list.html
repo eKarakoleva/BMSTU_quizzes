@@ -42,7 +42,6 @@
       			<td class="align-middle">{{ quiz.course }}</td>
             {% if quiz.sis_fully_checked == True%}
               {% if quiz.spoints >= quiz.min_points %}
-
                 <td class="align-middle"><span class="label label-success">{{quiz.spoints}}</span></td>
               {% else %}
                 <td class="align-middle"><span class="label label-danger">{{quiz.spoints}}</span></td>

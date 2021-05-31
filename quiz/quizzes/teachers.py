@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import (CreateView, DeleteView, DetailView, ListView,UpdateView)
 from quizzes.forms import TeacherSignUpForm, QuizForm, QuestionForm, AnswerForm, CourseForm, QuizActivateForm, QuizInCodeForm, CourseInCodeForm
-from quizzes.models import Cafedra, Course, User, Quiz, Questions, Answers, QuizSolveRecord, CourseParticipants, StudentOpenAnswers, GrammarQuestionSanctions, Languages
+from quizzes.models import Cafedra, Course, StudentGrammarAnswers, User, Quiz, Questions, Answers, QuizSolveRecord, CourseParticipants, StudentOpenAnswers, GrammarQuestionSanctions, Languages
 from django.urls import reverse_lazy, reverse
 from django.contrib import messages 
 from django.contrib.auth.decorators import login_required
@@ -16,10 +16,8 @@ from django.template.loader import render_to_string
 from django.db import connection
 #from django.contrib import messages
 #from django import forms
-from quizzes.grammar.Tokenizer import Tokenizer
-from quizzes.grammar.PoSTagger import PoSTagger
 
-from quizzes.helper import check_grades, generate_code, open_answers_for_check, construct_quiz_teacher, construct_quiz_student_results
+from quizzes.helper import check_grades, generate_code, open_answers_for_check, grammar_answers_for_check, construct_quiz_teacher, construct_quiz_student_results, isfloat
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 import json
 
@@ -503,31 +501,44 @@ def add_answer(request, qpk):
 		form = AnswerForm(request.POST)
 		# save the data and after fetch the object in instance
 		if form.is_valid():
+
 			instance = form.save(commit=False)
 			answers = repo.AnswerRepository(Answers)
 			sum_answers_points = answers.sum_all_question_answers_points(qpk)
 			questions = repo.QuestionRepository(Questions)
-			question_points = questions.get_question_points(qpk)
-			form_points_data = form.cleaned_data["points"]
-			instance.points = round(form_points_data, 1)
-			free_points = question_points - sum_answers_points
-			free_ponts = round(free_points, 1)
-			instance.question_id = qpk
+			question_type = questions.get_question_type(qpk)
 
-			left_points = round(free_points - form_points_data, 1)
-			instance.points = round(form_points_data, 1)
-			if form_points_data < free_points or left_points == 0.0:
-				instance.save()
-				messages.success(request, 'Success!')
+			if question_type != 'grammar':
+				question_points = questions.get_question_points(qpk)
+				form_points_data = form.cleaned_data["points"]
+				instance.points = round(form_points_data, 1)
+				free_points = question_points - sum_answers_points
+				free_ponts = round(free_points, 1)
+				instance.question_id = qpk
+
+				left_points = round(free_points - form_points_data, 1)
+				instance.points = round(form_points_data, 1)
+				if form_points_data < free_points or left_points == 0.0:
+					instance.save()
+					messages.success(request, 'Success!')
+				else:
+					instance.points = 0
+					instance.save()
+					messages.error(request, 'You put more points than you have left. Available points: %f'%free_points)
+				# serialize in new friend object in json
+				ser_instance = serializers.serialize('json', [ instance, ])
+
+				if left_points == 0:
+					questions.update_is_done(qpk, True)
 			else:
 				instance.points = 0
+				instance.question_id = qpk
 				instance.save()
-				messages.error(request, 'You put more points than you have left. Available points: %f'%free_points)
-			# serialize in new friend object in json
-			ser_instance = serializers.serialize('json', [ instance, ])
-
-			if left_points == 0:
 				questions.update_is_done(qpk, True)
+				messages.success(request, 'Success!')
+				ser_instance = serializers.serialize('json', [ instance, ])
+
+
 			# send to client side.
 			return JsonResponse({"instance": ser_instance}, status=200)
 		else:
@@ -540,6 +551,9 @@ def add_answer(request, qpk):
 @method_decorator([login_required, teacher_required], name='dispatch')
 class DeleteAnswer(DeleteView):
 	def  get(self, request):
+		data = {
+			'deleted': False
+		}
 		answersR = repo.AnswerRepository(Answers)
 		ans_id = request.GET.get('id', None)
 		quiz_id = answersR.get_quiz_id(ans_id)
@@ -547,19 +561,30 @@ class DeleteAnswer(DeleteView):
 		owner_id = quiz.get_owner_id(quiz_id)
 		questions = repo.QuestionRepository(Questions)
 		question_id = answersR.get_question_id(ans_id)
+		question_type = questions.get_question_type(question_id)
 		answer_points = answersR.get_answer_points(ans_id)
 		is_done = questions.get_done_status(question_id)
 
-		if is_done == True:
-			if answer_points != 0:
-				questions.update_is_done(question_id, False)
-
+		is_deleted = False
 		if request.user.id == owner_id:
 			answersR.answer_delete(ans_id)
+			is_deleted = True
 			data = {
 				'deleted': True
-			}
-			return JsonResponse(data)
+		}
+		if is_deleted:
+			if question_type != 'grammar':
+				if is_done == True:
+					if answer_points != 0:
+						questions.update_is_done(question_id, False)
+			else:
+				answersRepo = repo.AnswerRepository(Answers)
+				answers_count = answersRepo.get_answers_count(question_id)
+				print(answers_count)
+				if is_done == True and answers_count == 0:
+					questions.update_is_done(question_id, False)
+
+		return JsonResponse(data)
 
 @login_required
 @teacher_required
@@ -637,7 +662,9 @@ def get_answers_for_check(request, pk, spk):
 	if request.user.id == owner_id and is_participant:
 		quiz_name = quiz.get_name(pk)
 		answers = open_answers_for_check(pk, spk)
-		return render(request, 'teachers/check_quiz/check_quiz.html', {'answers': answers, 'quiz_id': pk, 'student_id': spk, 'quiz_name': quiz_name})
+		answers_grammar = grammar_answers_for_check(pk, spk)
+		print(answers_grammar)
+		return render(request, 'teachers/check_quiz/check_quiz.html', {'answers': answers, 'answers_grammar':answers_grammar, 'quiz_id': pk, 'student_id': spk, 'quiz_name': quiz_name})
 	raise Http404
 
 @csrf_exempt
@@ -651,6 +678,7 @@ def save_checked_answers(request, pk, spk):
 	is_participant = cpr.is_user_participant(spk, course_id)
 
 	if request.user.id == owner_id and is_participant:
+		questionRepo = repo.QuestionRepository(Questions)
 		new_points = request.POST['data']
 		new_points = json.loads(new_points)
 
@@ -658,7 +686,7 @@ def save_checked_answers(request, pk, spk):
 		open_questions = quesrtr.get_open_questions_id_points(pk)
 		soar = repo.StudentOpenAnswersRepository(StudentOpenAnswers)
 		qsrr = repo.QuizSolveRecordRepository(QuizSolveRecord)
-
+		sgar = repo.StudentGrammarAnswersRepository(StudentGrammarAnswers)
 		solve_info_id = qsrr.get_solve_info_id(pk, spk)
 
 		#new_points[i]['name'] - id
@@ -667,16 +695,33 @@ def save_checked_answers(request, pk, spk):
 		for i in range(1, len(new_points)):
 			for j in range(0, len(open_questions)):
 				question_id = int(new_points[i]['name'])
+				print("QUESTION_ID: ",question_id)
 				if question_id == open_questions[j]['id']:
 					points = round(float(new_points[i]['value']), 1)
 					open_question_points = float(open_questions[j]['points'])
 					if points <= open_question_points:
-						soar.update_answer_points(solve_info_id, question_id, pk, spk, points)
+						soar.update_answer_points(solve_info_id, question_id, points)
 						sum_points += points
 					else:
-						soar.update_answer_points(solve_info_id, question_id, pk, spk, open_question_points)
+						soar.update_answer_points(solve_info_id, question_id, open_question_points)
 						sum_points += open_question_points					
 					break
+				else:
+					quiz_id_points = questionRepo.get_quiz_id_and_type_points(question_id)
+					if len(quiz_id_points) != 0:
+						if quiz_id_points['qtype'] == 'grammar':
+							if isfloat(new_points[i]['value']):
+								points = round(float(new_points[i]['value']), 1)
+								if points <= quiz_id_points['points']:
+									sgar.update_answer_points(solve_info_id, question_id, points)
+									sum_points += points
+								else:
+									sgar.update_answer_points(solve_info_id, question_id, quiz_id_points['points'])
+									sum_points += quiz_id_points['points']	
+							else:
+								sgar.update_answer_corrected(solve_info_id, question_id, new_points[i]['value'])
+
+				
 		student_points = qsrr.get_points(solve_info_id)
 		qsrr.update_quiz_points_and_status(solve_info_id, student_points + sum_points, True)
 		return JsonResponse({
@@ -775,7 +820,7 @@ def student_quiz_view(request, pk, spk):
 	    
 		test = construct_quiz_student_results(pk, spk)
 		quiz_name =qr.get_name(pk)
-		return render(request, 'teachers/view/student_quiz_view.html', {'tests': test, 'quiz_name': quiz_name, 'quiz_id': pk})
+		return render(request, 'teachers/view/student_quiz_view.html', {'tests': test, 'quiz_name': quiz_name, 'quiz_id': pk, 'role': 'teacher'})
 	raise Http404
 
 def course_participants_list(request, pk):	

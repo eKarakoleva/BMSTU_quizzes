@@ -1,5 +1,5 @@
 from .grammar.lang_abr import languages, abr_lang 
-from quizzes.models import Languages, Tagset, BiGramms, TriGramms, LearnSets
+from quizzes.models import Languages, Tagset, BiGramms, LearnSets
 import quizzes.repositories as repo
 from .grammar.Trainer import Trainer, train_packet
 

@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from .grammar.Trainer import Trainer, train_packet
 from .grammar.lang_abr import languages, abr_lang 
 import quizzes.adminViewOperations as avo
-from quizzes.models import Languages, Tagset, BiGramms, TriGramms, LearnSets
+from quizzes.models import Languages, Tagset, BiGramms, LearnSets
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
 
 @login_required

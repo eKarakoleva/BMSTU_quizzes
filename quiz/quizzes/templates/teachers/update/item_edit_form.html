@@ -31,6 +31,12 @@
         </form>
         <script>
             $(document).ready(function () {
+                if ($('#answer_form').attr('qtype') == 'grammar'){
+			        $('#id_points').closest('div').hide()
+			        $('#id_points').hide()
+			        $('#id_correct').closest('div').hide()
+			        $('#id_correct').hide()
+		        }
                 var form_options = {
                     target: '#modal',
                     success: function() {  }

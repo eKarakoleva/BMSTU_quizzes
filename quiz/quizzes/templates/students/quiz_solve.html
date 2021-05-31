@@ -49,7 +49,7 @@
 					{% endfor %}
 				</div>
 				</ul> 
-				{% if qinfo.qtype == 'open' or qinfo.qtype == 'compare'%}
+				{% if qinfo.qtype == 'open' or qinfo.qtype == 'compare' or qinfo.qtype == 'grammar' %}
 					<div class="form-group">
 						<label for="exampleFormControlTextarea1">Write your answer here</label>
 						<textarea class="form-control" id="exampleFormControlTextarea1" name="{{question_id}}" rows="3"></textarea>

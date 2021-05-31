@@ -68,6 +68,44 @@
 								<textarea class="form-control" rows="3" disabled>{{qinfo.answers.answer}}</textarea>
 								<li class="list-group-item"> <strong> {{qinfo.answers.points}} points</strong></li>
 							{% endif %}
+							{% if qinfo.qtype == 'grammar'%}
+							<textarea class="form-control" rows="3" disabled>{{qinfo.answers.answer}}</textarea>
+							{% if role == 'teacher'%}
+							<div style="overflow-x:auto;">
+								<table id = "grammar-result" class="table">
+								  {% for sent, sent_info in qinfo.answers.result.items%}
+								  <thead>
+									<tr>
+									  {% for s_info, val in sent_info.items %}
+									  {% for key, val_info in val.items %}
+									  {% if key == 'error'%}
+										<th scope='col'>{{val_info}}</td>
+									  {% endif %}
+									  {%endfor%}
+									  {%endfor%}
+									</tr>
+								  </thead>
+								  <tbody>
+									<tr>
+									  {% for s_info, val in sent_info.items %}
+									  {% for key, val_info in val.items %}
+									  {% if key == 'word'%}
+										<td scope='col'>{{val_info}}</td>
+									  {% endif %}
+									  {%endfor%}
+									  {%endfor%}
+									</tr>
+									{%endfor%}
+								  </tbody>
+								</table>
+							  </div>
+							  {%endif%}
+							  <lable><b>Corrected sent</b></lable>
+							  <textarea class="form-control" rows="3" disabled>{{qinfo.answers.corrected_sents}}</textarea>
+							  <li class="list-group-item"> <strong> {{qinfo.answers.points}} points</strong></li>
+							{% endif %}
+
+							
 						<br>
 					</div>
 					

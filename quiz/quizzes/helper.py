@@ -3,9 +3,11 @@ import string
 import numpy as np
 import re
 import random
-
+import json
+import ast
 import quizzes.repositories as repo
-from quizzes.models import Cafedra, User, Course, CourseParticipants, Quiz, Questions, Answers, StudentOpenAnswers, QuizSolveRecord, StudentAnswers
+from quizzes.models import Questions, Answers, StudentOpenAnswers, QuizSolveRecord, StudentAnswers, GrammarQuestionSanctions,StudentGrammarAnswers, Languages
+import quizzes.grammarDB.checkerOperations as checkerop
 
 def generate_code(lettersCount = 4, digitsCount = 2):
 	sampleStr = ''.join((random.choice(string.ascii_letters) for i in range(lettersCount)))
@@ -118,7 +120,7 @@ def construct_quiz_student_results(quiz_id, student_id):
 		questions = quesrtr.get_by_quiz_id(quiz_id)
 
 		soar = repo.StudentOpenAnswersRepository(StudentOpenAnswers)
-
+		sgar = repo.StudentGrammarAnswersRepository(StudentGrammarAnswers)
 		quiz = {}
 
 		for question in questions:
@@ -143,12 +145,23 @@ def construct_quiz_student_results(quiz_id, student_id):
 					else:
 						temp[question.id]['answers'][answer.id]['is_answer'] = False
 			else:
-				open_student_answers = soar.get_student_answers(solve_info_id, question.id)
-				temp[question.id]['answers']['answer'] = ""
-				temp[question.id]['answers']['points'] = 0
-				if open_student_answers != -1:
-					temp[question.id]['answers']['answer'] = open_student_answers['answer']
-					temp[question.id]['answers']['points'] = open_student_answers['points']
+				if question.qtype != 'grammar':
+					open_student_answers = soar.get_student_answers(solve_info_id, question.id)
+					temp[question.id]['answers']['answer'] = ""
+					temp[question.id]['answers']['points'] = 0
+					if open_student_answers != -1:
+						temp[question.id]['answers']['answer'] = open_student_answers['answer']
+						temp[question.id]['answers']['points'] = open_student_answers['points']
+				else:
+					open_student_answers = sgar.get_student_answers(solve_info_id, question.id)
+					temp[question.id]['answers']['answer'] = ""
+					temp[question.id]['answers']['points'] = 0
+					if open_student_answers != -1:
+						temp[question.id]['answers']['answer'] = open_student_answers['answer']
+						temp[question.id]['answers']['points'] = open_student_answers['points']
+						temp[question.id]['answers']['result'] =  json.loads(open_student_answers['check_result'])
+						temp[question.id]['answers']['corrected_sents'] =  open_student_answers['corrected_sent']
+								
 
 			quiz.update(temp)
 		return quiz
@@ -171,6 +184,27 @@ def open_answers_for_check(quiz_id, stud_id):
 				oq['exist'] = True
 				oq['stud_answer'] = student_answer[0]['answer']
 	return open_questions
+
+def grammar_answers_for_check(quiz_id, stud_id):
+	quesrtr = repo.QuestionRepository(Questions)
+	grammar_questions = quesrtr.get_grammar_questions(quiz_id)
+	sgar = repo.StudentGrammarAnswersRepository(StudentGrammarAnswers)
+
+	qsrr = repo.QuizSolveRecordRepository(QuizSolveRecord)
+	solve_info_id = qsrr.get_solve_info_id(quiz_id, stud_id)
+	print("QUIZ: ", solve_info_id )
+	if grammar_questions:
+		for gq in grammar_questions:
+			student_answer = sgar.get_stud_grammar_answer_info(solve_info_id, gq['id'])
+			if not student_answer:
+				gq['exist'] = False
+			else:
+				gq['checked_result'] = json.loads(student_answer[0]['check_result'])
+				#gq['points'] = gq[0]['points']
+				gq['exist'] = True
+				gq['stud_answer'] = student_answer[0]['answer']
+				gq['corrected_sent'] = student_answer[0]['corrected_sent']
+	return grammar_questions
 
 def prepare_string(str1, str2):
 	#remove special charaters from string
@@ -235,3 +269,26 @@ def check_student_compare_answer(question_id, stud_answer):
 			return answer.points
 	return 0
 
+
+def check_student_grammar_answer(question_id, stud_answer):
+	gqsr = repo.GrammarQuestionSanctionsRepository(GrammarQuestionSanctions)
+	lang_id = gqsr.get_language(question_id)
+	error_struct_result = ""
+	if lang_id != -1:
+		langRepo = repo.LanguagesRepository(Languages)
+		lang = langRepo.get_abr_by_id(lang_id)
+		print("LANG: ", lang)
+		print(stud_answer)
+		ethalonts = checkerop.get_etalons(question_id)
+		error_struct_result, _ , corrected_sent = checkerop.process_checking(ethalonts, stud_answer, lang)
+
+		error_struct_result = json.dumps(error_struct_result)
+	return error_struct_result, corrected_sent
+
+
+def isfloat(value):
+  try:
+    float(value)
+    return True
+  except ValueError:
+    return False

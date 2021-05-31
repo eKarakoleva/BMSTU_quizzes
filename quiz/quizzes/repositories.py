@@ -2,6 +2,8 @@ from django.db.models import Sum
 from quizzes.models import CourseParticipants, User, QuizSolveRecord, Quiz, QuizSolveRecord, GrammarQuestionSanctions
 from django.utils import timezone
 import datetime
+from django.db.models import Count
+
 
 class UserRepository(object):
 	def __init__(self, model):
@@ -219,6 +221,14 @@ class QuestionRepository(object):
 			qid = 0
 		return qid
 
+	def get_quiz_id_and_type_points(self, question_id):
+		qid = self.model.objects.filter(id=question_id).values('quiz_id', 'qtype', 'points')
+		if not qid.exists():
+			qid = []
+		else:
+			qid = qid[0]
+		return qid
+
 	def get_quiz_points(self, question_id):
 		max_points = self.model.objects.filter(id=question_id).select_related('quiz').values('quiz__max_points')
 		if max_points:
@@ -249,6 +259,10 @@ class QuestionRepository(object):
 
 	def get_open_questions(self, quiz_id):
 		ids = self.model.objects.filter(quiz_id=quiz_id, qtype = 'open').values('id', 'points', 'name')
+		return ids
+
+	def get_grammar_questions(self, quiz_id):
+		ids = self.model.objects.filter(quiz_id=quiz_id, qtype = 'grammar').values('id', 'points', 'name')
 		return ids
 
 	def get_open_questions_id_points(self, quiz_id):
@@ -303,6 +317,14 @@ class AnswerRepository(object):
 	def get_question_id(self, answer_id):
 		return self.model.objects.filter(id=answer_id).select_related('question').values('question__id')[0]['question__id']
 
+	def get_answers_count(self, question_id):
+		count = self.model.objects.filter(question_id=question_id).values('question_id').annotate(count=Count('question_id'))
+		if not count:
+			count = 0
+		else:
+			count = count[0]['count']
+		
+		return count
 
 class CourseParticipantsRepository(object):
 	def __init__(self, model):
@@ -507,7 +529,7 @@ class StudentOpenAnswersRepository(object):
 			answer =  self.model.objects.filter(solve_info_id = solve_info_id, question_id = question_id).values('answer')
 			return answer
 
-	def update_answer_points(self,solve_info_id, question_id, quiz_id, student_id, points):
+	def update_answer_points(self,solve_info_id, question_id, points):
 
 		if solve_info_id > 0:
 			quiz_solve = self.model.objects.get(solve_info_id = solve_info_id, question_id = question_id)
@@ -522,6 +544,52 @@ class StudentOpenAnswersRepository(object):
 			answer = -1
 		return answer
 
+class StudentGrammarAnswersRepository(object):
+	def __init__(self, model):
+		self.model = model
+
+	def save_answer(self, solve_info, question_id, answer, points, corrected_sents, struct):
+		return self.model.objects.create(
+				solve_info_id= solve_info,
+				question_id = question_id, 
+				answer = answer, 
+				points = points,
+				corrected_sent = corrected_sents,
+				check_result = struct)
+
+	def get_stud_grammar_answer_text(self, solve_info_id, question_id):
+
+		if solve_info_id > 0:
+			answer =  self.model.objects.filter(solve_info_id = solve_info_id, question_id = question_id).values('answer')
+			return answer
+
+	def update_answer_points(self,solve_info_id, question_id, points):
+
+		if solve_info_id > 0:
+			quiz_solve = self.model.objects.get(solve_info_id = solve_info_id, question_id = question_id)
+			quiz_solve.points = points
+			quiz_solve.save()
+
+	def update_answer_corrected(self,solve_info_id, question_id, corrected_sent):
+		if solve_info_id > 0:
+			quiz_solve = self.model.objects.get(solve_info_id = solve_info_id, question_id = question_id)
+			quiz_solve.corrected_sent = corrected_sent
+			quiz_solve.save()
+
+	def get_student_answers(self, solve_id, question_id):
+		answer =  self.model.objects.filter(solve_info_id = solve_id, question_id = question_id).values('answer', 'points', 'check_result', 'corrected_sent')
+		if answer:
+			answer = answer[0]
+		else:
+			answer = -1
+		return answer
+
+	def get_stud_grammar_answer_info(self, solve_info_id, question_id):
+		if solve_info_id > 0:
+			answer =  self.model.objects.filter(solve_info_id = solve_info_id, question_id = question_id).values('answer', 'points', 'check_result', 'corrected_sent')
+			if answer:
+				return answer
+		return []
 
 class LanguagesRepository(object):
 	def __init__(self, model):
@@ -671,7 +739,7 @@ class BiGrammsRepository(object):
 			return self.model.objects.filter(id=exists[0].id).update(freq=int(exists[0].freq) + int(freq))
 		else:
 			return []
-
+'''
 class TriGrammsRepository(object):
 	def __init__(self, model):
 		self.model = model
@@ -703,7 +771,7 @@ class TriGrammsRepository(object):
 			return self.model.objects.filter(id=exists[0].id).update(freq=int(exists[0].freq) + int(freq))
 		else:
 			return []
-
+'''
 
 class GrammarQuestionSanctionsRepository(object):
 	def __init__(self, model):

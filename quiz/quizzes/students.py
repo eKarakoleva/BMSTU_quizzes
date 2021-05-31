@@ -1,19 +1,15 @@
-from django.views.generic import (CreateView, DeleteView, DetailView, ListView,UpdateView)
-from quizzes.forms import StudentSignUpForm, CourseForm, QuestionForm, AnswerForm
-from quizzes.models import Cafedra, User, Course, CourseParticipants, Quiz, Questions, QuizSolveRecord, StudentAnswers,StudentOpenAnswers
+from django.views.generic import (CreateView)
+from quizzes.forms import StudentSignUpForm
+from quizzes.models import Cafedra, User, Course, CourseParticipants, Quiz, QuizSolveRecord, StudentAnswers,StudentOpenAnswers, StudentGrammarAnswers
 from django.urls import reverse_lazy, reverse
 from django.shortcuts import render, get_object_or_404, redirect
-from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from quizzes.decorators import student_required
 
 import quizzes.repositories as repo
-from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
+from django.http import HttpResponse, JsonResponse, Http404
 from django.template.loader import render_to_string
 from django.contrib import messages
-from django.db import transaction
-from django.forms import inlineformset_factory
-from django.forms.formsets import formset_factory
 import quizzes.helper as helper
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 import json
@@ -202,10 +198,11 @@ def finish_test(request, pk):
 		quiz_data = helper.construct_main(pk)
 		is_fully_checked = True
 		points = 0
-
+		print(quiz_data)
 		solve_info_id = int(solve_info_id)
 		sar = repo.StudentAnswersRepository(StudentAnswers)
 		soar = repo.StudentOpenAnswersRepository(StudentOpenAnswers)
+		sgar = repo.StudentGrammarAnswersRepository(StudentGrammarAnswers)
 
 		for i in range(1, len(student_answers)):
 			if i != 0:
@@ -215,7 +212,7 @@ def finish_test(request, pk):
 				key = int(student_answers[i]['name'])
 				#check if question_id belongs to quiz
 				if key in quiz_data.keys():
-					if quiz_data[key]['qtype'] != 'open' and quiz_data[key]['qtype'] != 'compare':
+					if quiz_data[key]['qtype'] != 'open' and quiz_data[key]['qtype'] != 'compare' and quiz_data[key]['qtype'] != 'grammar':
 						#check if answer_id belongs to question
 						answer_id = int(student_answers[i]['value'])
 						if answer_id in quiz_data[key]['answers'].keys():
@@ -233,6 +230,9 @@ def finish_test(request, pk):
 								points += points_compare
 								#save answer + compare algorithm = points
 								soar.save_answer(solve_info_id, key, answer, points_compare)
+						if quiz_data[key]['qtype'] == 'grammar':
+							struct, corrected_sents = helper.check_student_grammar_answer(key, str(answer))
+							sgar.save_answer(solve_info_id, key, answer, 0, corrected_sents, struct)
 		qsrr.finish_quiz(pk, request.user.id, points, is_fully_checked)
 		qr = repo.QuizRepository(Quiz)
 		course_id = qr.get_course_id(pk)
@@ -268,4 +268,4 @@ def graded_quiz_view(request, pk):
 	test = helper.construct_quiz_student_results(pk, request.user.id)
 	quiz_name =qr.get_name(pk)
 	course_id = qr.get_course_id(pk)
-	return render(request, 'teachers/view/student_quiz_view.html', {'tests': test, 'quiz_name': quiz_name, 'quiz_id': pk, 'course_id': course_id})
+	return render(request, 'teachers/view/student_quiz_view.html', {'tests': test, 'quiz_name': quiz_name, 'quiz_id': pk, 'course_id': course_id,  'role': 'student'})

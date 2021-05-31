@@ -41,7 +41,7 @@
 					{% endfor %}        
 			  	{% endif %} 
 			  	<br>
-				<div class="container-fluid add_form">
+				<div class="container-fluid add_form" qtype = "{{ qtype }}" id="answer_form">
 					{%if quiz_is_active == False %}
 						<form id="answers-form">
 							<div class="row">
@@ -62,7 +62,9 @@
 						<thead>
 								<tr>
 										<th>Answer</th>
+										{% if qtype != 'grammar'%}
 										<th>Points</th>
+										{%endif%}
 										<th>Correct</th>
 										<th></th>
 
@@ -72,7 +74,9 @@
 						{% for answer in answers %}
 						<tr id="answer-{{answer.id}}">
 								<td class = "cut-text" title="{{answer.name}}">{{answer.name}}</td>
-								<td name = "{{answer.points}}"  class = "add">{{answer.points}}</td>
+								{% if qtype != 'grammar'%}
+									<td name = "{{answer.points}}"  class = "add">{{answer.points}}</td>
+								{% endif%}
 								{% if answer.correct %}
 									<td><span class="label label-success">{{answer.correct}}</span></td>
 								{% else %}
@@ -91,6 +95,7 @@
 			            	<td class="bg-light text-center font-italic" colspan="5">You haven't created any answers yet.</td>
 			          	</tr>
 						{% endfor %}
+								{% if qtype != 'grammar'%}
 								<tr>
 								<td class = "cut-text"><strong>TOTAL</strong></td>
 								<td><strong class="total"></strong></td>
@@ -98,15 +103,16 @@
 								<td class="text-right">
 									
 								</td>
+								{% endif %}
 						</tr>      
 						</tbody>
 				</table>
+				{% if qtype == 'grammar'%}
 				<textarea id="possible-answer" cols="15" rows="4" class="form-control" step="0.1"></textarea>
 				<br>
 				<a id = "test-answer" class="btn btn-primary delete mb-3" role="button">Test</a>
 				<br><br><br>
-				
-				{% if qtype == 'grammar'%}
+
 				<div id = "error_codes">
 				</div>
 				<div style="overflow-x:auto;">
@@ -138,7 +144,12 @@
 
 {% block javascript %}
 	<script type="text/javascript">
-
+		if ($('#answer_form').attr('qtype') == 'grammar'){
+			$('#id_points').closest('div').hide()
+			$('#id_points').hide()
+			$('#id_correct').closest('div').hide()
+			$('#id_correct').hide()
+		}
 		$("#mod_but").click(function(){
 			console.log($(this).attr('href'))
 			$("#item_update_form").attr("action",$(this).attr('href'));
@@ -228,7 +239,7 @@
 					console.log(data['error_codes'])
 					for (const [key, value] of Object.entries(data['error_result'])) {
 						
-						console.log(value)
+						console.log(key)
 						for (const [_, info] of Object.entries(value)) {
 							if (info['word'] == "__sent__"){
 								info['word'] = "END"

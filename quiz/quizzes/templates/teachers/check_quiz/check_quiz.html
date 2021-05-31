@@ -44,10 +44,72 @@
                 <br>
             </div>
       {% endfor %}
-      <br>
-      <input type="submit" name="g" class="btn btn-primary" value="Submit" id="g">
-      <br><br>
       </ol>
+      <ol>
+        {% for answer in answers_grammar %}
+          
+            <li style="font-size:19px"> <h3> {{answer.name}}</h3> </li>
+         
+              <div id="{{question_id}}"> 
+                  <div class="form-group">
+                      {% if answer.exist %}
+                          <label for="stud_answer">Student's answer</label>
+                          <textarea class="form-control" rows="3" disabled>{{answer.stud_answer}}</textarea>
+                          <div style="overflow-x:auto;">
+                            <table id = "grammar-result" class="table">
+                              {% for sent, sent_info in answer.checked_result.items%}
+                              <thead>
+                                <tr>
+                                  {% for s_info, val in sent_info.items %}
+                                  {% for key, val_info in val.items %}
+                                  {% if key == 'error'%}
+                                    <th scope='col'>{{val_info}}</td>
+                                  {% endif %}
+                                  {%endfor%}
+                                  {%endfor%}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  {% for s_info, val in sent_info.items %}
+                                  {% for key, val_info in val.items %}
+                                  {% if key == 'word'%}
+                                    <td scope='col'>{{val_info}}</td>
+                                  {% endif %}
+                                  {%endfor%}
+                                  {%endfor%}
+
+                                </tr>
+                                {%endfor%}
+                              </tbody>
+                            </table>
+                          </div>
+                          
+                          <textarea class="form-control" rows="3" id="stud_answer" name="{{answer.id}}">{{ answer.corrected_sent }}</textarea>
+                          
+                        
+                          <div class="form-group ">
+                            <label for="disabledInput" class="col-sm-2 control-label"></label>
+                            <br>
+                            
+                            <div class="col-sm-2 " style="  float: right; clear: both;">
+                              <label for="stud_answer">Points</label>
+                              <label for="stud_answer">( {{answer.points}} )</label>
+                              <input class="form-control allownumericwithdecimal check_max" id="stud_answer" max = "{{answer.points}}" type="number" value="0" step="0.1" name="{{answer.id}}">
+                            </div>
+                            <br>
+                          </div>
+                      {%else%}
+                          <label for="stud_answer">Answer didn't exist when student solved quiz</label>
+                      {% endif %}
+                  </div>
+                  <br>
+              </div>
+        {% endfor %}
+        <br>
+        <input type="submit" name="g" class="btn btn-primary" value="Submit" id="grammar">
+        <br><br>
+        </ol>
 
 </form>
 <div id="test"></div>
@@ -60,7 +122,7 @@
 <script>
     
     $( "form" ).submit(function( event ) {
-        $(this).find('input[type="submit"]').attr('disabled','disabled');
+        $(this).find('input[type="submit"]').find('textarea[type="submit"]').attr('disabled','disabled');
         dataa =  $( this ).serializeArray();
         console.log(dataa)
         event.preventDefault();

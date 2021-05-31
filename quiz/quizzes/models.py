@@ -132,6 +132,13 @@ class StudentOpenAnswers(models.Model):
 	answer = models.TextField(blank=True)
 	points = models.FloatField(default=0)
 
+class StudentGrammarAnswers(models.Model):
+	solve_info = models.ForeignKey(QuizSolveRecord, on_delete=models.CASCADE, related_name='sosolve_info_grammar', unique=False)
+	question = models.ForeignKey(Questions, on_delete=models.CASCADE, related_name='ganswer_question', unique=False)
+	answer = models.TextField(blank=True)
+	points = models.FloatField(default=0)
+	corrected_sent = models.TextField(blank=True)
+	check_result = models.TextField(blank=True)
 
 class Languages(models.Model):
 	name = models.CharField(max_length=15)
@@ -152,7 +159,7 @@ class BiGramms(models.Model):
 	freq = models.CharField(max_length=10)
 	lang = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name='lang_bi', unique=False)
 	learn_set = models.ForeignKey(LearnSets, on_delete=models.CASCADE, related_name='learn_set_bi', unique=False)
-
+'''
 class TriGramms(models.Model):
 	tag1 = models.ForeignKey(Tagset, on_delete=models.CASCADE, related_name='tag_tri_1', unique=False, null=True)
 	tag2 = models.ForeignKey(Tagset, on_delete=models.CASCADE, related_name='tag_tri_2', unique=False, null=True)
@@ -160,7 +167,7 @@ class TriGramms(models.Model):
 	freq = models.CharField(max_length=10)
 	lang = models.ForeignKey(Languages, on_delete=models.CASCADE, related_name='lang_tri', unique=False)
 	learn_set = models.ForeignKey(LearnSets, on_delete=models.CASCADE, related_name='learn_set_tri', unique=False)
-
+'''
 
 class GrammarQuestionSanctions(models.Model):
 	question = models.ForeignKey(Questions, on_delete=models.CASCADE, related_name='question_id_grammar', unique=False)

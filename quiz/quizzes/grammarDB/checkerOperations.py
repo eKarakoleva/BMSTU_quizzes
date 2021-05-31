@@ -179,6 +179,7 @@ class GrammarChecker:
         bi_grams= self.tokenizer.generate_ngrams(self.checking_sents, 2, prepare = True, end_tag = True)
         
         tokenized_sent = []
+        all_corected_sents = []
         sent_counter = 0
         for sent_bigrams in bi_grams:    #check_sent
             bi_gram_counter = 0
@@ -246,10 +247,9 @@ class GrammarChecker:
             tokenized_sent = self.fix_aux_connections(sent_counter, tokenized_sent, main_forms_checking_sent)
                                        
             sent_counter += 1
+            all_corected_sents.append(tokenized_sent)
         print("STRUCT: ", self.word_error_struct)
-        tokenized_sent.remove(END_TOKEN)
-        tokenized_sent.remove(END_TOKEN)
-        return tokenized_sent
+        return all_corected_sents
 
 
     def fix_aux_connections(self, sent_counter, tokenized_sent, main_forms_checking_sent):
@@ -300,6 +300,7 @@ class GrammarChecker:
                                 self.check_grammar_rules(j, sent_counter, word_index_re, bi_words_re, possible_words_next, main_forms_checking_sent, tokenized_sent)
                         word_index_re += 1  
         return tokenized_sent 
+        
     def remove_if_wrong_mistake(self, sent_counter, bi_word_count):
         errors = []
         for cur_error in self.word_error_struct[sent_counter][bi_word_count]['error']:
@@ -353,14 +354,15 @@ class GrammarChecker:
                         tokenized_sent[bi_word_count] = bi_gramm_words[i]
                         pwn = bi_gramm_words[i]
                         word_is_correct = NOT_IN_ETHALON
+
+                if word_is_correct == WORD_FORM_MISTAKE or word_is_correct == SPELLING_MISTAKE:
+                    self.update_words_struct(sent_count, bi_word_count, pwn, self.word_error_struct[sent_count][bi_word_count + 1]['word'], word_is_correct)
+                    word_is_correct = WORD_WITH_NO_MISTAKE
+
                 print("WORDS2: ", next_word)
                 if next_word in self.words_main_ethalon.keys():
                     print("NO MATCH0: ",pwn,  next_word, word_is_correct, tokenized_sent)
                     #word_is_correct - for first word
-                    if word_is_correct == WORD_FORM_MISTAKE or word_is_correct == SPELLING_MISTAKE:
-                        self.update_words_struct(sent_count, bi_word_count, pwn, self.word_error_struct[sent_count][bi_word_count + 1]['word'], word_is_correct)
-                        word_is_correct = WORD_WITH_NO_MISTAKE
-
                     error_type = self.check_pos_grammar(pwn, next_word,tokenized_sent,temp_error_struct, word_is_correct)
                     print("ERROR TYPE: ", error_type )
 
@@ -370,12 +372,12 @@ class GrammarChecker:
                     posible_words, possible_words_next = self.get_possible_correction_words(next_word, pwn, main_forms_checking_sent)
                     if len(possible_words_next) != 0:
                         print("NO MATCH1: ",pwn,  next_word, word_is_correct, possible_words_next)
-                        error_type, new_second_word = self.search_for_second_word(i, bi_word_count, pwn, next_word, possible_words_next, bi_gramm_words,tokenized_sent,temp_error_struct, word_is_correct)
+                        error_type, new_second_word = self.search_for_second_word(i, sent_count, bi_word_count, pwn, next_word, possible_words_next, bi_gramm_words,tokenized_sent,temp_error_struct, word_is_correct)
                         next_word = new_second_word
                         print("WORDS: ",next_word )
                     else:
                         print("NO MATCH2: ",pwn,  next_word, word_is_correct, posible_words)
-                        error_type, new_second_word = self.search_for_second_word(i, bi_word_count, pwn, next_word, posible_words, bi_gramm_words,tokenized_sent,temp_error_struct, word_is_correct)
+                        error_type, new_second_word = self.search_for_second_word(i, sent_count, bi_word_count, pwn, next_word, posible_words, bi_gramm_words,tokenized_sent,temp_error_struct, word_is_correct)
                         next_word = new_second_word
                     print("ERROR TYPE2: ", error_type, next_word)
                     self.update_temp_error_struct(pwn, new_second_word, error_type, temp_error_struct)
@@ -393,14 +395,17 @@ class GrammarChecker:
                         tokenized_sent[bi_word_count + 1] = temp_error_struct['second_word']
                 else:
                     if error_t != WORD_WITH_NO_MISTAKE:
-                        self.append_if_not_exist(self.word_error_struct[sent_count][bi_word_count]['error'], error_t)
-                        self.append_if_not_exist(self.word_error_struct[sent_count][bi_word_count + 1]['error'], error_t)
+                        if error_type != TRANSLATION_MISTAKE:
+                            self.append_if_not_exist(self.word_error_struct[sent_count][bi_word_count]['error'], error_t)
+                            self.append_if_not_exist(self.word_error_struct[sent_count][bi_word_count + 1]['error'], error_t)
+                        else:
+                            self.append_if_not_exist(self.word_error_struct[sent_count][bi_word_count + 1]['error'], error_t)
 
             print("\nTEMP_STRUCT: ", temp_error_struct)
             print("CHECK: ", tokenized_sent)
             print("\nSTRUCT: ", self.word_error_struct)
 
-    def search_for_second_word(self, i, bi_word_count, first_word, second_word_, possible_words, bi_gramm_words,tokenized_sent,temp_error_struct, word_is_correct):
+    def search_for_second_word(self, i, sent_count, bi_word_count, first_word, second_word_, possible_words, bi_gramm_words,tokenized_sent,temp_error_struct, first_word_is_correct):
         skipped = 0
         error_type = SPELLING_MISTAKE
         word_correct = SPELLING_MISTAKE
@@ -412,10 +417,10 @@ class GrammarChecker:
             
             if possible_words[second_word] == WORD_FORM_MISTAKE:
                 print("\nWORD FORM MISTAKE")
-                #self.update_words_struct(sent_count, bi_word_count, first_word,second_word, WORD_FORM_MISTAKE)
+                self.update_words_struct(sent_count, bi_word_count, first_word,second_word, WORD_FORM_MISTAKE)
                 tokenized_sent[bi_word_count + 1] = second_word
                 word_correct =  WORD_FORM_MISTAKE
-                self.update_temp_error_struct(first_word, second_word, word_correct, temp_error_struct)
+                #self.update_temp_error_struct(first_word, second_word, word_correct, temp_error_struct)
                 #return WORD_FORM_MISTAKE, second_word  #form mistake?
 
 
@@ -434,8 +439,6 @@ class GrammarChecker:
             print("NEW_comp2: ", new_word_comb)
             if new_word_comb in self.bi_words_ethalon: 
                 print("\nSPELLING: ", new_word_comb),
-                #self.update_words_struct(sent_count, bi_word_count, first_word, second_word, error_type)
-                #return error_type, second_word
                 word_correct = SPELLING_MISTAKE
                 self.update_temp_error_struct(first_word, second_word, word_correct, temp_error_struct)
             else:
@@ -443,28 +446,30 @@ class GrammarChecker:
                 tag = self.get_word_pos(corrected_sent)
                 pos_bi_gramm = tag[first_word] + " " + tag[second_word]
                 print("ELSE: ", pos_bi_gramm, self.bi_pos_ethalon)
-                if pos_bi_gramm in self.bi_pos_ethalon:
-                    if word_correct !=  WORD_FORM_MISTAKE:
-                        print("\nSPELLING + WRONG_ORDER: ", pos_bi_gramm, first_word, second_word)
+            
+                if word_correct !=  WORD_FORM_MISTAKE:
+                    if first_word_is_correct != NOT_IN_ETHALON:
+                        print("\nSPELLING + WRONG_ORDER0: ", pos_bi_gramm, first_word, second_word)
                         word_correct = SPELLING_AND_ORDER
-                        #return SPELLING_AND_ORDER, second_word
                     else:
-                        print("\nWRONG_ORDER_: ", pos_bi_gramm, first_word, second_word)
-                        #return WRONG_ORDER, second_word
-                        word_correct = WRONG_ORDER
+                        print("\nNOT ETHALON1: ", pos_bi_gramm, first_word, second_word)
+                        word_correct = NOT_IN_ETHALON 
                 else:
-                    word_correct = SPELLING_AND_ORDER
+                    print("\nORDER: ", pos_bi_gramm, first_word, second_word)
+                    if first_word_is_correct != NOT_IN_ETHALON:
+                        word_correct = WRONG_ORDER   
+                    else:
+                        word_correct = NOT_IN_ETHALON                    
+
                 self.update_temp_error_struct(first_word, second_word, word_correct, temp_error_struct)
 
             if possible_words[second_word] >= 0.85:
                 break
                 
 
-            if word_is_correct != NOT_IN_ETHALON:
-                #word_is_correct - first word
-                error_type = self.check_pos_grammar(first_word, second_word_, tokenized_sent, temp_error_struct, word_correct)
-            else:
-                error_type = self.check_pos_grammar(first_word, second_word_ ,tokenized_sent, temp_error_struct, word_correct = NOT_IN_ETHALON)
+
+            error_type = self.check_pos_grammar(first_word, second_word_, tokenized_sent, temp_error_struct, word_correct)
+
         if len(possible_words) == 0 or skipped:  #no possible words to change with
             print("NO_CHANGEEE")
             if len(possible_words) == 0:
@@ -506,13 +511,14 @@ class GrammarChecker:
                 
             if pos_bi_gramm in self.bi_pos_ethalon:
                 if is_grammarly_correct != 1:
-                    print("ALL_Coo: ", first_word, second_word, pos_bi_gramm)
-                    if word_correct == WORD_WITH_NO_MISTAKE:
-                        print("\nWRONG ORDER: ", new_bi_gramm)
-                        error_type = WRONG_ORDER
+                    print("ALL_Coo: ", first_word, second_word, pos_bi_gramm, word_correct)
+                    #if word_correct == WORD_WITH_NO_MISTAKE:
+                        #print("\nWRONG ORDER1: ", new_bi_gramm)
+                        #error_type = WRONG_ORDER
                     if word_correct == SPELLING_MISTAKE:
                         print("\nSPELLING + WRONG_ORDER1: ", new_bi_gramm)
                         error_type = SPELLING_AND_ORDER
+
                     if word_correct == NOT_IN_ETHALON or word_correct == TRANSLATION_MISTAKE:
                         print("\nnTRANSLATION_WORD: ", new_bi_gramm)
                         error_type = TRANSLATION_MISTAKE     
@@ -520,24 +526,26 @@ class GrammarChecker:
                     print("\nWRONG GRAMMAR1: ", new_bi_gramm)
                     error_type = GRAMMAR_MISTAKE               
             else:
-                if is_grammarly_correct != -1 or second_word == END_TOKEN:
-                    if word_correct == NOT_IN_ETHALON:
-                            print("PROBABLY_TRANSLATE (NOT_IN_ETHALON) ", new_bi_gramm, pos_bi_gramm)
-                            error_type = NOT_IN_ETHALON
-                    else:
+                print("ALL_Coo22: ", first_word, second_word, pos_bi_gramm, word_correct)
+                
+                if word_correct == NOT_IN_ETHALON:
+                    print("PROBABLY_TRANSLATE (NOT_IN_ETHALON) ", new_bi_gramm, pos_bi_gramm)
+                    error_type = NOT_IN_ETHALON
+                else:
+                    if is_grammarly_correct != -1 or second_word == END_TOKEN:
                         if word_correct == WORD_WITH_NO_MISTAKE: #words are correct from the begginig:
-                            print("\nWRONG ORDER: ", new_bi_gramm, pos_bi_gramm)
+                            print("\nWRONG ORDER2: ", new_bi_gramm, pos_bi_gramm)
                             error_type = WRONG_ORDER
                         else:
                             if word_correct != WORD_FORM_MISTAKE :
                                 print("\nSPELLING + WRONG_ORDER2: ", new_bi_gramm, pos_bi_gramm)
                                 error_type = SPELLING_AND_ORDER
                             else:
-                                print("\n WRONG_ORDER2: ", new_bi_gramm, pos_bi_gramm)
+                                print("\n WRONG_ORDER3: ", new_bi_gramm, pos_bi_gramm)
                                 error_type = WRONG_ORDER
-                else:
-                    print("\nWRONG GRAMMAR2: ", new_bi_gramm)
-                    error_type = GRAMMAR_MISTAKE
+                    else:
+                        print("\nWRONG GRAMMAR2: ", new_bi_gramm)
+                        error_type = GRAMMAR_MISTAKE
 
             self.update_temp_error_struct(first_word, second_word, error_type, temp_error_struct)
         return error_type
@@ -656,6 +664,7 @@ class GrammarChecker:
             temp_error_struct['first_word'] = first_word
             temp_error_struct['second_word'] = second_word
             temp_error_struct['error_type'] = error_type
+       
         print("TEMP_struct_OUT: ", temp_error_struct)
 
     def update_structs(self,error_type, first_word, second_word, sent_count, bi_word_count, temp_error_struct):
@@ -736,8 +745,20 @@ class GrammarChecker:
     def process_checking(self, ethalons, checking_sents):
         self.ethalon_info_prepare(ethalons)
         self.prepare_checking_sents(checking_sents)
-        corrected_sent = self.process_mistakes()
+        corrected_sent= self.process_mistakes()
+        corrected_sent = self.remove_end_tags_corrected_sents(corrected_sent)
         return corrected_sent
+
+    def remove_end_tags_corrected_sents(self, sents):
+        corr_sents = ""
+        for sent in sents:
+            print(sent)
+            while END_TOKEN in sent:
+                sent.remove(END_TOKEN)
+            sent = " ".join(sent)
+            corr_sents += sent + " "
+        return corr_sents
+           
 
 def get_etalons(question_id):
     answerRepo = repo.AnswerRepository(model.Answers)
@@ -748,7 +769,6 @@ def get_etalons(question_id):
 def process_checking(ethalons, checking_sents, lang):
     gc = GrammarChecker(lang)
     corrected_sent = gc.process_checking(ethalons, checking_sents)
-    corrected_sent = " ".join(corrected_sent)
     return gc.word_error_struct, error_explain, corrected_sent
 
 

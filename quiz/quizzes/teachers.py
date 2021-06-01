@@ -359,21 +359,22 @@ def question_add(request, pk):
 						sp = float(request.POST["spelling-points"])
 						gp = float(request.POST["grammar-points"])
 						tp = float(request.POST["translate-points"])
+						op = float(request.POST["order-points"])
+						ep = float(request.POST["ethalon-points"])
 						lang = request.POST["lang"]
 						langRepo = repo.LanguagesRepository(Languages)
 						lang_query = langRepo.get_language(lang)
 						if lang_query != -1:
-							minus_points = sp + gp + tp
-							if minus_points > cleaned_data_user:
+							if sp > cleaned_data_user or gp > cleaned_data_user or tp > cleaned_data_user or op > cleaned_data_user or ep > cleaned_data_user:
 								can_save = False
-								messages.error(request, 'You cant have spelling and grammar points more that total question points!', extra_tags='alert')
+								messages.error(request, 'You cant have points for mistake more that total question points!', extra_tags='alert')
 						else:
 							can_save = False
 					if can_save:
 						question.save()
 						if is_grammar:
 							gsr = repo.GrammarQuestionSanctionsRepository(GrammarQuestionSanctions)
-							gsr.add_grammar_sanctions(question.id, sp, gp, tp, lang_query[0].id)
+							gsr.add_grammar_sanctions(question.id, sp, gp, tp, op, ep, lang_query[0].id)
 						messages.success(request, 'You may now add answers/options to the question.')
 						return redirect('/teachers/course/quiz/%d/questions/'%pk)
 				else:
@@ -392,12 +393,25 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 	is_actve = questions.get_quiz_status(pk)
 
 	if request.user.id == owner_id and not is_actve:
+		
 		cur_question_points = questions.get_question_points(pk)
 		answers = repo.AnswerRepository(Answers)
 		sum_answers_points, exist = answers.sum_all_question_answers_points_if_exist(pk)
+	
+		question_ = questions.get_by_id(pk)
+		if question_:
+			qtype = question_[0].qtype
+		else:
+			qtype = "NONE"
+
+		grammar_points = []
+		if question_[0].qtype == 'grammar':
+			grammar_points = questions.get_grammar_points(pk)
+			print(grammar_points)
 
 		form = QuestionForm(request.POST or None, instance=question)
 		if form.is_valid():
+			qtype = questions.get_question_type(pk)
 			update_status = -1
 			question = form.save(commit=False)
 
@@ -405,7 +419,6 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 			if_points_changed = round(form_points_data - cur_question_points, 1)
 
 			if if_points_changed != 0:
-
 				same_points = False
 				question.points = round(form_points_data, 1)
 				quiz_id = questions.get_quiz_id(pk)
@@ -424,7 +437,7 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 				is_done = questions.get_done_status(pk)
 				
 				if form_points_data > sum_answers_points and not same_points:
-					if is_done == True:
+					if is_done == True and qtype != 'grammar':
 						update_status = 0
 						#questions.update_is_done(pk, False)
 				else:
@@ -433,24 +446,73 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 						#questions.update_is_done(pk, True)
 			
 			update_type = form.cleaned_data["qtype"]
-			if update_type == 'open' or update_type == 'compare':
-				qtype = questions.get_question_type(pk)
+			if update_type == 'open' or update_type == 'compare' or update_type == 'grammar':
 				if qtype != 'open' and qtype != 'compare':
 					if not exist:
 						update_status = 1
 					else:
 						question.qtype = qtype
+						update_status = -1
 						messages.error(request, 'Can not change type of the question to open or compare. There are answers in this question!')
-			question.save()	
+				
+				if update_type == 'compare':
+					if not exist:
+						update_status = 0
+				else:
+					if update_type == 'open':
+						if not exist:
+							update_status = 1
+						else:
+							question.qtype = qtype
+							update_status = -1
+							messages.error(request, 'Can not change type of the question to open. There are answers in this question!')
+				if update_type == 'grammar' and qtype != 'grammar':
+					question.qtype = qtype
+			else:
+				if qtype == 'open' or qtype == 'compare':
+					if not exist:
+						if update_status == -1:
+							update_status = -1
+						else:
+							update_status = 0 
+					if qtype == 'open' and update_type != 'open':
+						update_status = 0 
+				else:
+					if qtype == 'grammar':
+						update_status = 1
 
+			question.save()	
 			if update_status == 1:
-				questions.update_is_done(pk, True)
+				gramm_update_status = 1
+				if qtype == 'grammar' and update_type != 'grammar':
+					gqsr = repo.GrammarQuestionSanctionsRepository(GrammarQuestionSanctions)
+					gqsr.delete_sanctions(pk)
+					if update_type == 'open':
+						questions.update_is_done(pk, True)
+					else:
+						questions.update_is_done(pk, False)
+					gramm_update_status = 0
+				else:
+					if update_type == 'grammar' and qtype == 'grammar':
+						lr = repo.LanguagesRepository(Languages)
+						lang_id = lr.get_id_by_abr(request.POST["language"])
+						if lang_id != -1:
+							gqsr = repo.GrammarQuestionSanctionsRepository(GrammarQuestionSanctions)
+							gqsr.update_sanctions(pk, request.POST["spelling_points"], request.POST["grammar_points"], request.POST["translate_points"], request.POST["order_points"], request.POST["ethalon_points"], lang_id)
+							gramm_update_status = 0
+					else:
+						if update_type == 'grammar' and qtype != 'grammar':
+							gramm_update_status = 0
+							messages.error(request, 'Can not change type of the question to grammar!')
+				if gramm_update_status:
+					questions.update_is_done(pk, True)
+		
 			else:
 				if update_status == 0:
 					questions.update_is_done(pk, False)
 			
 			return HttpResponse(render_to_string('teachers/update/item_edit_form_success.html'))
-		return render(request, template_name, {'form':form, 'id': pk, 'sum_answers': sum_answers_points})
+		return render(request, template_name, {'form':form, 'id': pk, 'sum_answers': sum_answers_points, 'mistake_points': grammar_points, 'qtype': qtype})
 	raise Http404
 
 @method_decorator([login_required, teacher_required], name='dispatch')
@@ -664,7 +726,7 @@ def get_answers_for_check(request, pk, spk):
 		answers = open_answers_for_check(pk, spk)
 		answers_grammar = grammar_answers_for_check(pk, spk)
 		print(answers_grammar)
-		return render(request, 'teachers/check_quiz/check_quiz.html', {'answers': answers, 'answers_grammar':answers_grammar, 'quiz_id': pk, 'student_id': spk, 'quiz_name': quiz_name})
+		return render(request, 'teachers/check_quiz/check_quiz.html', {'answers': answers, 'answers_grammar':answers_grammar, 'quiz_id': pk, 'student_id': spk, 'quiz_name': quiz_name, 'error_codes': checkerop.error_explain})
 	raise Http404
 
 @csrf_exempt
@@ -820,7 +882,7 @@ def student_quiz_view(request, pk, spk):
 	    
 		test = construct_quiz_student_results(pk, spk)
 		quiz_name =qr.get_name(pk)
-		return render(request, 'teachers/view/student_quiz_view.html', {'tests': test, 'quiz_name': quiz_name, 'quiz_id': pk, 'role': 'teacher'})
+		return render(request, 'teachers/view/student_quiz_view.html', {'tests': test, 'quiz_name': quiz_name, 'quiz_id': pk, 'role': 'teacher', 'errors': checkerop.error_explain})
 	raise Http404
 
 def course_participants_list(request, pk):	

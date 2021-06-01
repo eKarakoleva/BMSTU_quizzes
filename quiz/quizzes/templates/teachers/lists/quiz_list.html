@@ -87,12 +87,12 @@
                 
               {% endif %}
 
-              <div class="dropdown">
-                <button class="btn btn-info dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <div class="btn-group">
+                <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                   Students
                 </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                  <a class="dropdown-item" href="{% url 'teachers:view_quiz_for_check' quiz.id %}">Check quizzes</a>
+                <div class="dropdown-menu">
+                  <a class="dropdown-item" href="{% url 'teachers:view_quiz_for_check' quiz.id %}">Check quizzes</a><br>
                   <a class="dropdown-item" href="{% url 'teachers:view_students_quiz_grades' quiz.id %}">View grades</a>
                 </div>
               </div>

@@ -55,6 +55,7 @@
                       {% if answer.exist %}
                           <label for="stud_answer">Student's answer</label>
                           <textarea class="form-control" rows="3" disabled>{{answer.stud_answer}}</textarea>
+                          <p><b>{{error_codes}}</b></p>
                           <div style="overflow-x:auto;">
                             <table id = "grammar-result" class="table">
                               {% for sent, sent_info in answer.checked_result.items%}

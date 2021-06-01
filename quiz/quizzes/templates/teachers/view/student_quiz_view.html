@@ -72,6 +72,7 @@
 							<textarea class="form-control" rows="3" disabled>{{qinfo.answers.answer}}</textarea>
 							{% if role == 'teacher'%}
 							<div style="overflow-x:auto;">
+								<p><b>{{errors}}</b></p>
 								<table id = "grammar-result" class="table">
 								  {% for sent, sent_info in qinfo.answers.result.items%}
 								  <thead>

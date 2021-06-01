@@ -297,9 +297,14 @@ class AnswerRepository(object):
 	def sum_all_question_answers_points_if_exist(self, question_id):
 		points = self.model.objects.filter(question_id=question_id).aggregate(Sum('points'))['points__sum']
 		exist = True
-		if(not points):
+		if points == None:
 			points = 0
 			exist = False
+		else:
+			if points == 0:
+				exist = True
+			
+	
 		return points, exist
 
 	#only for update methods
@@ -777,11 +782,13 @@ class GrammarQuestionSanctionsRepository(object):
 	def __init__(self, model):
 		self.model = model
 
-	def add_grammar_sanctions(self, quest_id, spelling, grammar, translate, lang):
+	def add_grammar_sanctions(self, quest_id, spelling, grammar, translate, order, ethalon, lang):
 		return self.model.objects.create(question_id = quest_id, 
 										spelling_points = spelling,
 										grammar_points = grammar,
 										translate_points = translate,
+										order_points = order,
+										ethalon_points = ethalon,
 										lang_id = lang)
 	def get_info(self, quest_id):
 		qginfo = self.model.objects.filter(question_id = quest_id)
@@ -796,3 +803,15 @@ class GrammarQuestionSanctionsRepository(object):
 		else:
 			lang_id = lang_id[0]['lang_id']
 		return lang_id
+
+	def delete_sanctions(self, quest_id):
+		return self.model.objects.get(question_id=quest_id).delete()
+
+	def update_sanctions(self, question_id, spelling, grammar, translate, order, ethalon, language):
+		return self.model.objects.filter(question_id=question_id).update(question_id = question_id, 
+										spelling_points = spelling,
+										grammar_points = grammar,
+										translate_points = translate,
+										order_points = order,
+										ethalon_points = ethalon,
+										lang_id = language)

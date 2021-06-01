@@ -21,6 +21,42 @@
                             {% if field.help_text %}<div class="form-helptext">{{ field.help_text }}</div>{% endif %}
                         </div>
                     {% endfor %}
+                    {% if qtype == 'grammar'%}
+                    <div id = "grammar-options">
+                    <div class="form-group">
+                    <select name = "lang" class="form-control" id="id_lang">\
+                        <option>en</option>
+                        <option>ru</option>
+                    </select>
+                    </div>
+					{% for points in mistake_points%}
+                        <div class="form-group">
+						<label>Spelling points</label>
+						<input class="form-control" value="{{ points.spelling_points}}" type="number" name="spelling_points" value="5.0" step="0.1" id="id_spelling_points">
+                        </div> 
+						<div class="form-group">
+						<label>Spelling points</label>
+						<input class="form-control" value="{{ points.spelling_points}}" type="number" name="spelling_points" value="5.0" step="0.1" id="id_spelling_points">
+                        </div>  
+                        <div class="form-group">
+						<label>Grammar points</label>
+						<input class="form-control" value="{{ points.grammar_points}}" type="number" name="grammar_points" value="5.0" step="0.1" id="id_grammar_points">
+                        </div> 
+                        <div class="form-group">
+						<label>Translate points</label>
+						<input class="form-control" value="{{ points.translate_points}}" type="number" name="translate_points" value="5.0" step="0.1" id="id_translate_points">
+                        </div> 
+                        <div class="form-group">
+						<label>Order points</label>
+						<input class="form-control" value="{{ points.order_points}}" type="number" name="order_points" value="5.0" step="0.1" id="id_order_points">
+                        </div>  
+                        <div class="form-group">
+						<label>Not in the ethalon points</label>
+						<input class="form-control" value="{{ points.ethalon_points}}" type="number" name="ethalon_points" value="5.0" step="0.1" id="id_ethalon_points">
+						</div>   
+					{% endfor %} 
+                    </div>
+                    {% endif %}
               </div>
               <div class="modal-footer">
                 <h4 id = "explain_points" style="text-align:center;"></h4>
@@ -42,6 +78,22 @@
                         $(this).removeData('bs.modal');
                     });
                 });
+
+                var conceptName = $('#id_qtype').find(":selected").text();
+                if (conceptName != 'grammar'){
+                    $("#id_qtype option[value=grammar]").remove()
+                }
+
+                $('#id_qtype').on('change', function() {
+                    var new_change = $('#id_qtype').find(":selected").text()
+                    if (new_change != 'grammar'){
+                        $('#grammar-options').hide()
+                    }
+                    else{
+                        $('#grammar-options').show()
+                    }
+                });
+                
                   
                 var question_points = parseFloat($('#quiz_points').attr('name'))
                 var total_question_points = parseFloat($(".total").text())

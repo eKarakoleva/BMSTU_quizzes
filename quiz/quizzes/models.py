@@ -175,3 +175,5 @@ class GrammarQuestionSanctions(models.Model):
 	spelling_points = models.FloatField(default=0)
 	grammar_points = models.FloatField(default=0)
 	translate_points = models.FloatField(default=0)
+	order_points = models.FloatField(default=0)
+	ethalon_points = models.FloatField(default=0)

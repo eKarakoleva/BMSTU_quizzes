@@ -407,7 +407,6 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 		grammar_points = []
 		if question_[0].qtype == 'grammar':
 			grammar_points = questions.get_grammar_points(pk)
-			print(grammar_points)
 
 		form = QuestionForm(request.POST or None, instance=question)
 		if form.is_valid():
@@ -482,7 +481,7 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 						update_status = 1
 
 			question.save()	
-			if update_status == 1:
+			if update_status == 1 or qtype == 'grammar':
 				gramm_update_status = 1
 				if qtype == 'grammar' and update_type != 'grammar':
 					gqsr = repo.GrammarQuestionSanctionsRepository(GrammarQuestionSanctions)
@@ -495,7 +494,7 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 				else:
 					if update_type == 'grammar' and qtype == 'grammar':
 						lr = repo.LanguagesRepository(Languages)
-						lang_id = lr.get_id_by_abr(request.POST["language"])
+						lang_id = lr.get_id_by_abr(request.POST["lang"])
 						if lang_id != -1:
 							gqsr = repo.GrammarQuestionSanctionsRepository(GrammarQuestionSanctions)
 							gqsr.update_sanctions(pk, request.POST["spelling_points"], request.POST["grammar_points"], request.POST["translate_points"], request.POST["order_points"], request.POST["ethalon_points"], lang_id)
@@ -642,7 +641,6 @@ class DeleteAnswer(DeleteView):
 			else:
 				answersRepo = repo.AnswerRepository(Answers)
 				answers_count = answersRepo.get_answers_count(question_id)
-				print(answers_count)
 				if is_done == True and answers_count == 0:
 					questions.update_is_done(question_id, False)
 
@@ -725,7 +723,6 @@ def get_answers_for_check(request, pk, spk):
 		quiz_name = quiz.get_name(pk)
 		answers = open_answers_for_check(pk, spk)
 		answers_grammar = grammar_answers_for_check(pk, spk)
-		print(answers_grammar)
 		return render(request, 'teachers/check_quiz/check_quiz.html', {'answers': answers, 'answers_grammar':answers_grammar, 'quiz_id': pk, 'student_id': spk, 'quiz_name': quiz_name, 'error_codes': checkerop.error_explain})
 	raise Http404
 
@@ -757,7 +754,6 @@ def save_checked_answers(request, pk, spk):
 		for i in range(1, len(new_points)):
 			for j in range(0, len(open_questions)):
 				question_id = int(new_points[i]['name'])
-				print("QUESTION_ID: ",question_id)
 				if question_id == open_questions[j]['id']:
 					points = round(float(new_points[i]['value']), 1)
 					open_question_points = float(open_questions[j]['points'])
@@ -901,14 +897,9 @@ def test_grammar(request, qpk):
 	gqsr = repo.GrammarQuestionSanctionsRepository(GrammarQuestionSanctions)
 	lang_id = gqsr.get_language(qpk)
 	if lang_id != -1:
-		
 		langRepo = repo.LanguagesRepository(Languages)
 		lang = langRepo.get_abr_by_id(lang_id)
-		print("LANG: ", lang)
-		#aa = checkerop.levenshtein_ratio_and_distance('going', 'go', ratio_calc = True)
-		#print("RATIO: ", aa)
 		sents_to_check = request.GET.get('sents', None)
-		print(sents_to_check)
 		ethalonts = checkerop.get_etalons(qpk)
 		error_struct_result, error_codes, corrected_sent = checkerop.process_checking(ethalonts, sents_to_check, lang)
 

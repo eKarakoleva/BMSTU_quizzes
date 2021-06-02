@@ -189,21 +189,23 @@ def grammar_answers_for_check(quiz_id, stud_id):
 	quesrtr = repo.QuestionRepository(Questions)
 	grammar_questions = quesrtr.get_grammar_questions(quiz_id)
 	sgar = repo.StudentGrammarAnswersRepository(StudentGrammarAnswers)
-
+	gqsr = repo.GrammarQuestionSanctionsRepository(GrammarQuestionSanctions)
 	qsrr = repo.QuizSolveRecordRepository(QuizSolveRecord)
 	solve_info_id = qsrr.get_solve_info_id(quiz_id, stud_id)
-	print("QUIZ: ", solve_info_id )
 	if grammar_questions:
 		for gq in grammar_questions:
 			student_answer = sgar.get_stud_grammar_answer_info(solve_info_id, gq['id'])
 			if not student_answer:
 				gq['exist'] = False
 			else:
+				sanctions = gqsr.form_error_sanction_dict_error_names(gq['id'])
 				gq['checked_result'] = json.loads(student_answer[0]['check_result'])
 				#gq['points'] = gq[0]['points']
 				gq['exist'] = True
 				gq['stud_answer'] = student_answer[0]['answer']
 				gq['corrected_sent'] = student_answer[0]['corrected_sent']
+				gq['suggested_points'] = student_answer[0]['points']
+				gq['sanctions'] = sanctions
 	return grammar_questions
 
 def prepare_string(str1, str2):
@@ -270,20 +272,43 @@ def check_student_compare_answer(question_id, stud_answer):
 	return 0
 
 
-def check_student_grammar_answer(question_id, stud_answer):
-	gqsr = repo.GrammarQuestionSanctionsRepository(GrammarQuestionSanctions)
-	lang_id = gqsr.get_language(question_id)
+def check_student_grammar_answer(question_id, stud_answer, question_sanctions, grammarChecker):
 	error_struct_result = ""
-	if lang_id != -1:
-		langRepo = repo.LanguagesRepository(Languages)
-		lang = langRepo.get_abr_by_id(lang_id)
-		print("LANG: ", lang)
-		print(stud_answer)
-		ethalonts = checkerop.get_etalons(question_id)
-		error_struct_result, _ , corrected_sent = checkerop.process_checking(ethalonts, stud_answer, lang)
+	ethalonts = checkerop.get_etalons(question_id)
+	error_struct_result, _ , corrected_sent = grammarChecker.process_checking(ethalonts, stud_answer)
+	points_sanctions = calculate_grammar_question_points(error_struct_result, question_sanctions)
+	qr = repo.QuestionRepository(Questions)
+	question_points = qr.get_question_points(question_id)
+	points_for_question = question_points - points_sanctions
+	if points_for_question < 0:
+		points_for_question = 0
+	error_struct_result = json.dumps(error_struct_result)
+	return error_struct_result, corrected_sent, points_for_question
 
-		error_struct_result = json.dumps(error_struct_result)
-	return error_struct_result, corrected_sent
+def calculate_grammar_question_points(struct, question_sanctions):
+	mistakes_count  = dict()
+	points_sanctions = 0
+	for key in checkerop.error_explain.keys():
+		if key not in mistakes_count.keys():
+			mistakes_count[key] = 0
+
+	for sent_i in range(len(struct)):
+		for word_i in range(len(struct[sent_i])):
+			for error in struct[sent_i][word_i]['error']:
+				if error in mistakes_count.keys():
+					mistakes_count[error] += 1
+
+	double_errors = [checkerop.WRONG_ORDER, checkerop.TRANSLATION_MISTAKE,checkerop.NOT_IN_ETHALON,checkerop.GRAMMAR_MISTAKE,checkerop.WORD_FORM_MISTAKE]
+	for key in mistakes_count.keys():
+		if key in double_errors:
+			if mistakes_count[key] > 1:
+				if mistakes_count[key] % 2 == 0:
+					mistakes_count[key] /= 2
+				else:
+					mistakes_count[key] -= 1
+		points_sanctions += mistakes_count[key] * question_sanctions[key]
+	return points_sanctions
+
 
 
 def isfloat(value):

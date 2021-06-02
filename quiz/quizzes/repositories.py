@@ -3,6 +3,7 @@ from quizzes.models import CourseParticipants, User, QuizSolveRecord, Quiz, Quiz
 from django.utils import timezone
 import datetime
 from django.db.models import Count
+import quizzes.grammarDB.checkerOperations as checkerop
 
 
 class UserRepository(object):
@@ -267,6 +268,20 @@ class QuestionRepository(object):
 
 	def get_open_questions_id_points(self, quiz_id):
 		ids = self.model.objects.filter(quiz_id=quiz_id, qtype = 'open').values('id', 'points')
+		return ids
+
+	def get_open_question_id_points(self, quiz_id, question_id):
+		ids = self.model.objects.filter(quiz_id=quiz_id, qtype = 'open', id = question_id).values('id', 'points')
+		if not ids.exists():
+			ids = -1
+		return ids
+
+	def get_open_grammar_question_id_points(self, quiz_id, question_id):
+		ids = self.model.objects.filter(quiz_id=quiz_id, qtype = 'grammar',id = question_id).values('id', 'points', 'qtype') | self.model.objects.filter(quiz_id=quiz_id, qtype = 'open',id = question_id).values('id', 'points', 'qtype')
+		if not ids.exists():
+			ids = -1
+		else:
+			ids = ids[0]
 		return ids
 
 class AnswerRepository(object):
@@ -563,13 +578,11 @@ class StudentGrammarAnswersRepository(object):
 				check_result = struct)
 
 	def get_stud_grammar_answer_text(self, solve_info_id, question_id):
-
 		if solve_info_id > 0:
 			answer =  self.model.objects.filter(solve_info_id = solve_info_id, question_id = question_id).values('answer')
 			return answer
 
 	def update_answer_points(self,solve_info_id, question_id, points):
-
 		if solve_info_id > 0:
 			quiz_solve = self.model.objects.get(solve_info_id = solve_info_id, question_id = question_id)
 			quiz_solve.points = points
@@ -585,6 +598,14 @@ class StudentGrammarAnswersRepository(object):
 		answer =  self.model.objects.filter(solve_info_id = solve_id, question_id = question_id).values('answer', 'points', 'check_result', 'corrected_sent')
 		if answer:
 			answer = answer[0]
+		else:
+			answer = -1
+		return answer
+
+	def get_points(self, solve_id, question_id):
+		answer =  self.model.objects.filter(solve_info_id = solve_id, question_id = question_id).values('points')
+		if answer:
+			answer = answer[0]['points']
 		else:
 			answer = -1
 		return answer
@@ -796,6 +817,12 @@ class GrammarQuestionSanctionsRepository(object):
 			qginfo = -1
 		return qginfo
 
+	def get_points(self, quest_id):
+		qginfo = self.model.objects.filter(question_id = quest_id).values('spelling_points', 'ethalon_points', 'grammar_points', 'order_points', 'translate_points')
+		if not qginfo:
+			qginfo = -1
+		return qginfo
+
 	def get_language(self, quest_id):
 		lang_id = self.model.objects.filter(question_id = quest_id).values('lang_id')
 		if not lang_id:
@@ -815,3 +842,36 @@ class GrammarQuestionSanctionsRepository(object):
 										order_points = order,
 										ethalon_points = ethalon,
 										lang_id = language)
+
+	def form_error_sanction_dict(self, quest_id):
+		mistakes_points  = dict()
+		sanctions = self.get_points(quest_id)
+		for key in checkerop.error_explain.keys():
+			if key not in mistakes_points.keys():
+				mistakes_points[key] = 0
+		if sanctions != -1:
+			sanctions = sanctions[0]
+			mistakes_points[checkerop.SPELLING_MISTAKE] = sanctions['spelling_points']
+			mistakes_points[checkerop.NOT_IN_ETHALON] = sanctions['ethalon_points']
+			mistakes_points[checkerop.GRAMMAR_MISTAKE] = sanctions['grammar_points']
+			mistakes_points[checkerop.WORD_FORM_MISTAKE] = sanctions['grammar_points']
+			mistakes_points[checkerop.WRONG_ORDER] = sanctions['order_points']
+			mistakes_points[checkerop.TRANSLATION_MISTAKE] = sanctions['translate_points']
+		return mistakes_points
+
+	def form_error_sanction_dict_error_names(self, quest_id):
+		mistakes_points  = dict()
+		sanctions = self.get_points(quest_id)
+		for key in checkerop.error_explain.keys():
+			if key not in mistakes_points.keys():
+				mistakes_points[checkerop.error_explain[key]] = 0
+		if sanctions != -1:
+			sanctions = sanctions[0]
+			mistakes_points[checkerop.error_explain[checkerop.SPELLING_MISTAKE]] = sanctions['spelling_points']
+			mistakes_points[checkerop.error_explain[checkerop.NOT_IN_ETHALON]] = sanctions['ethalon_points']
+			mistakes_points[checkerop.error_explain[checkerop.GRAMMAR_MISTAKE]] = sanctions['grammar_points']
+			mistakes_points[checkerop.error_explain[checkerop.WORD_FORM_MISTAKE]] = sanctions['grammar_points']
+			mistakes_points[checkerop.error_explain[checkerop.WRONG_ORDER]] = sanctions['order_points']
+			mistakes_points[checkerop.error_explain[checkerop.TRANSLATION_MISTAKE]] = sanctions['translate_points']
+		return mistakes_points
+										

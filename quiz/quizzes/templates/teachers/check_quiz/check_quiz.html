@@ -31,7 +31,7 @@
                           <br>
                           
                           <div class="col-sm-2 " style="  float: right; clear: both;">
-                            <label for="stud_answer">Points</label>
+                            <label for="stud_answer">Max points</label>
                             <label for="stud_answer">( {{answer.points}} )</label>
                             <input class="form-control allownumericwithdecimal check_max" id="stud_answer" max = "{{answer.points}}" type="number" value="0" step="0.1" name="{{answer.id}}">
                           </div>
@@ -55,7 +55,8 @@
                       {% if answer.exist %}
                           <label for="stud_answer">Student's answer</label>
                           <textarea class="form-control" rows="3" disabled>{{answer.stud_answer}}</textarea>
-                          <p><b>{{error_codes}}</b></p>
+                          <p><b>{% for code, mistake in  error_codes.items %}{{code}}:{{mistake}}   {% endfor %}</b></p>
+                         
                           <div style="overflow-x:auto;">
                             <table id = "grammar-result" class="table">
                               {% for sent, sent_info in answer.checked_result.items%}
@@ -64,7 +65,7 @@
                                   {% for s_info, val in sent_info.items %}
                                   {% for key, val_info in val.items %}
                                   {% if key == 'error'%}
-                                    <th scope='col'>{{val_info}}</td>
+                                    <th scope='col'>{% for err in val_info%}{{err}} {%endfor%}</td>
                                   {% endif %}
                                   {%endfor%}
                                   {%endfor%}
@@ -87,15 +88,18 @@
                           </div>
                           
                           <textarea class="form-control" rows="3" id="stud_answer" name="{{answer.id}}">{{ answer.corrected_sent }}</textarea>
+                          <h4>Sanctions: </h4>
                           
+                          <p>{% for sanction, mistake in  answer.sanctions.items %}<b>{{sanction}}</b>:{{mistake}}   {% endfor %}</p>
                         
                           <div class="form-group ">
                             <label for="disabledInput" class="col-sm-2 control-label"></label>
                             <br>
                             
                             <div class="col-sm-2 " style="  float: right; clear: both;">
-                              <label for="stud_answer">Points</label>
+                              <label for="stud_answer">Max points</label>
                               <label for="stud_answer">( {{answer.points}} )</label>
+                              <label for="stud_answer">Suggested: ( {{answer.suggested_points}} )</label>
                               <input class="form-control allownumericwithdecimal check_max" id="stud_answer" max = "{{answer.points}}" type="number" value="0" step="0.1" name="{{answer.id}}">
                             </div>
                             <br>

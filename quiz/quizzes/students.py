@@ -1,6 +1,6 @@
 from django.views.generic import (CreateView)
 from quizzes.forms import StudentSignUpForm
-from quizzes.models import Cafedra, User, Course, CourseParticipants, Quiz, QuizSolveRecord, StudentAnswers,StudentOpenAnswers, StudentGrammarAnswers
+from quizzes.models import Cafedra, GrammarQuestionSanctions, User, Course, CourseParticipants, Quiz, QuizSolveRecord, StudentAnswers,StudentOpenAnswers, StudentGrammarAnswers, Languages
 from django.urls import reverse_lazy, reverse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
@@ -15,6 +15,7 @@ from django.views.decorators.csrf import csrf_exempt, csrf_protect
 import json
 import datetime
 from django.utils import timezone
+import quizzes.grammarDB.checkerOperations as checkerop
 
 class StudentSignUpView(CreateView):
 	model = User
@@ -198,12 +199,15 @@ def finish_test(request, pk):
 		quiz_data = helper.construct_main(pk)
 		is_fully_checked = True
 		points = 0
-		print(quiz_data)
 		solve_info_id = int(solve_info_id)
 		sar = repo.StudentAnswersRepository(StudentAnswers)
 		soar = repo.StudentOpenAnswersRepository(StudentOpenAnswers)
 		sgar = repo.StudentGrammarAnswersRepository(StudentGrammarAnswers)
 
+		init_grammarChecker_parameters = 1
+		lang_id = -1
+		grammarChecker = -1
+		gqsr = -1
 		for i in range(1, len(student_answers)):
 			if i != 0:
 
@@ -231,8 +235,19 @@ def finish_test(request, pk):
 								#save answer + compare algorithm = points
 								soar.save_answer(solve_info_id, key, answer, points_compare)
 						if quiz_data[key]['qtype'] == 'grammar':
-							struct, corrected_sents = helper.check_student_grammar_answer(key, str(answer))
-							sgar.save_answer(solve_info_id, key, answer, 0, corrected_sents, struct)
+							if init_grammarChecker_parameters:
+								gqsr = repo.GrammarQuestionSanctionsRepository(GrammarQuestionSanctions)
+								lang_id = gqsr.get_language(key)
+								if lang_id != -1:
+									langRepo = repo.LanguagesRepository(Languages)
+									lang = langRepo.get_abr_by_id(lang_id)
+									grammarChecker = checkerop.GrammarChecker(lang)
+									init_grammarChecker_parameters = 0
+							if lang_id != -1 and grammarChecker != -1 and gqsr != -1:
+								question_sanctions = gqsr.form_error_sanction_dict(key)
+								struct, corrected_sents, points_gra = helper.check_student_grammar_answer(key, str(answer), question_sanctions, grammarChecker)
+								sgar.save_answer(solve_info_id, key, answer, points_gra, corrected_sents, struct)
+								grammarChecker.reset()
 		qsrr.finish_quiz(pk, request.user.id, points, is_fully_checked)
 		qr = repo.QuizRepository(Quiz)
 		course_id = qr.get_course_id(pk)

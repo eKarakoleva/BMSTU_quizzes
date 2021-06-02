@@ -747,7 +747,7 @@ class GrammarChecker:
         self.prepare_checking_sents(checking_sents)
         corrected_sent= self.process_mistakes()
         corrected_sent = self.remove_end_tags_corrected_sents(corrected_sent)
-        return corrected_sent
+        return self.word_error_struct, error_explain, corrected_sent
 
     def remove_end_tags_corrected_sents(self, sents):
         corr_sents = ""
@@ -759,6 +759,16 @@ class GrammarChecker:
             corr_sents += sent + " "
         return corr_sents
            
+    def reset(self):
+        self.ethalon_sents = []
+        self.checking_sents = []
+        self.words_main_ethalon = dict()
+        self.bi_words_ethalon = []
+        self.bi_pos_ethalon = dict()
+        self.nsubjs_ethalon = []
+        self.auxs_ethalon = []
+        self.word_error_struct = dict()
+
 
 def get_etalons(question_id):
     answerRepo = repo.AnswerRepository(model.Answers)
@@ -770,5 +780,7 @@ def process_checking(ethalons, checking_sents, lang):
     gc = GrammarChecker(lang)
     corrected_sent = gc.process_checking(ethalons, checking_sents)
     return gc.word_error_struct, error_explain, corrected_sent
+
+
 
 

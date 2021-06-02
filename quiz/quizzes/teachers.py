@@ -737,12 +737,10 @@ def save_checked_answers(request, pk, spk):
 	is_participant = cpr.is_user_participant(spk, course_id)
 
 	if request.user.id == owner_id and is_participant:
-		questionRepo = repo.QuestionRepository(Questions)
 		new_points = request.POST['data']
 		new_points = json.loads(new_points)
 
 		quesrtr = repo.QuestionRepository(Questions)
-		open_questions = quesrtr.get_open_questions_id_points(pk)
 		soar = repo.StudentOpenAnswersRepository(StudentOpenAnswers)
 		qsrr = repo.QuizSolveRecordRepository(QuizSolveRecord)
 		sgar = repo.StudentGrammarAnswersRepository(StudentGrammarAnswers)
@@ -752,32 +750,32 @@ def save_checked_answers(request, pk, spk):
 		#new_points[i]['value'] - points
 		sum_points = 0
 		for i in range(1, len(new_points)):
-			for j in range(0, len(open_questions)):
-				question_id = int(new_points[i]['name'])
-				if question_id == open_questions[j]['id']:
+			question_id = int(new_points[i]['name'])
+			question_info = quesrtr.get_open_grammar_question_id_points(pk, question_id)
+			if question_info != -1:
+				if question_info['qtype'] == 'open':
 					points = round(float(new_points[i]['value']), 1)
-					open_question_points = float(open_questions[j]['points'])
+					open_question_points = float(question_info['points'])
 					if points <= open_question_points:
 						soar.update_answer_points(solve_info_id, question_id, points)
 						sum_points += points
 					else:
 						soar.update_answer_points(solve_info_id, question_id, open_question_points)
 						sum_points += open_question_points					
-					break
 				else:
-					quiz_id_points = questionRepo.get_quiz_id_and_type_points(question_id)
-					if len(quiz_id_points) != 0:
-						if quiz_id_points['qtype'] == 'grammar':
-							if isfloat(new_points[i]['value']):
-								points = round(float(new_points[i]['value']), 1)
-								if points <= quiz_id_points['points']:
-									sgar.update_answer_points(solve_info_id, question_id, points)
-									sum_points += points
-								else:
-									sgar.update_answer_points(solve_info_id, question_id, quiz_id_points['points'])
-									sum_points += quiz_id_points['points']	
+					if question_info['qtype'] == 'grammar':
+						if isfloat(new_points[i]['value']):
+							points = round(float(new_points[i]['value']), 1)
+							grammar_points = float(question_info['points'])
+							if points <= grammar_points:
+								sgar.update_answer_points(solve_info_id, question_id, points)
+								sum_points += points
 							else:
-								sgar.update_answer_corrected(solve_info_id, question_id, new_points[i]['value'])
+								sgar.update_answer_points(solve_info_id, question_id, grammar_points)
+								sum_points += grammar_points	
+						else:
+							sgar.update_answer_corrected(solve_info_id, question_id, new_points[i]['value'])
+
 
 				
 		student_points = qsrr.get_points(solve_info_id)

@@ -181,7 +181,7 @@ class QuestionRepository(object):
 		return self.model.objects.filter(id = qpk)
 
 	def get_grammar_points(self, qpk):
-		return GrammarQuestionSanctions.objects.filter(question_id = qpk)
+		return GrammarQuestionSanctions.objects.filter(question_id = qpk).select_related('lang')
 
 	def get_by_quiz_id(self, quiz_id):
 		return self.model.objects.filter(quiz_id = quiz_id).order_by('-id').reverse()
@@ -629,6 +629,9 @@ class LanguagesRepository(object):
 
 	def get_all(self):
 		return self.model.objects.all()
+
+	def get_all_abr(self):
+		return self.model.objects.all().values('abr')
 
 	def add_lang(self, lang, abr):
 		return self.model.objects.create(name = lang, abr = abr)

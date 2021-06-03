@@ -1,14 +1,13 @@
 import quizzes.repositories as repo
-from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse_lazy, reverse
-from django.contrib import messages 
+from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 
-from .grammar.Trainer import Trainer, train_packet
-from .grammar.lang_abr import languages, abr_lang 
+from .grammar.Trainer import train_packet
+from .grammar.lang_abr import languages
 import quizzes.adminViewOperations as avo
-from quizzes.models import Languages, Tagset, BiGramms, LearnSets
-from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
+from quizzes.models import Languages, Tagset
+from django.http import JsonResponse
+from quizzes.grammar.TestMethod import TestMethod
 
 @login_required
 def train_page(request):
@@ -50,5 +49,19 @@ def get_progress(request):
 	data = {
 		'status': process,
 		'corpus': corpus
+	}
+	return JsonResponse(data)
+
+@login_required
+def test_page(request):
+	return render(request, 'grammar/test_page.html', {'langs': languages})
+
+@login_required
+def test(request):
+	lang = request.GET.get('lang', None)
+	tm = TestMethod(lang)
+	tm.read_ethalon_sents_from_file()
+	data = {
+		'activated': True
 	}
 	return JsonResponse(data)

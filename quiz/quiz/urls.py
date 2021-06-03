@@ -86,5 +86,10 @@ urlpatterns = [
        path('tags/', train, name = "train"),
        path('progress/', get_progress, name = "get_progress"),
     ], 'quizzes'), namespace='train')),
+
+    path('test/', include(([
+       path('', test_page, name = "test_page"),
+       path('lang/', test, name = "test"),
+    ], 'quizzes'), namespace='test')),
 ]
 

@@ -25,15 +25,16 @@
                     <div id = "grammar-options">
                     <div class="form-group">
                     <select name = "lang" class="form-control" id="id_lang">\
-                        <option>en</option>
-                        <option>ru</option>
+                        {% for lang, selected in languages.items%}
+                            {% if selected == True %}
+                                <option selected>{{lang}} </option>
+                            {% else %}
+                                <option>{{lang}} </option>
+                            {% endif %}
+                        {% endfor %}
                     </select>
                     </div>
 					{% for points in mistake_points%}
-                        <div class="form-group">
-						<label>Spelling points</label>
-						<input class="form-control" value="{{ points.spelling_points}}" type="number" name="spelling_points" value="5.0" step="0.1" id="id_spelling_points">
-                        </div> 
 						<div class="form-group">
 						<label>Spelling points</label>
 						<input class="form-control" value="{{ points.spelling_points}}" type="number" name="spelling_points" value="5.0" step="0.1" id="id_spelling_points">

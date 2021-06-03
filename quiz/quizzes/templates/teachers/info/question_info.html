@@ -25,6 +25,10 @@
                   {% if question.qtype == 'grammar'%}
                     {% for points in grammar_points%}
                     <div class="form-group">
+                      <label>Language</label>
+                      <input class="form-control" value="{{ points.lang.name}}" readonly>
+                    </div>  
+                    <div class="form-group">
                       <label>Spelling points</label>
                       <input class="form-control" value="{{ points.spelling_points}}" readonly>
                     </div>   

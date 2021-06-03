@@ -5,19 +5,36 @@ from quizzes.grammar.lang_abr import abr_to_lang
 END_TOKEN = '__sent__'
 my_punctuation = punctuation.replace("'", "").replace("-", "").replace("_", "")
 
+short_forms = {
+    "'re": "are",
+    "'m" : "am",
+    "'s" : "is",
+    "'ll": "will",
+    "'ve": "have",
+    "'d" : "would"
+}
+
 class Tokenizer:
   def __init__(self, lang="english"):
     self.lang = abr_to_lang(lang)
-
     self.my_punctuation = my_punctuation
 
+
+  def replace_short_forms(self, text):
+    for sf in short_forms.keys():
+      text = text.replace(sf," " + short_forms[sf])
+    return text
+
   def remove_punctuation(self, text):
+    text = text.replace("`","'")
     return text.translate(str.maketrans('', '', self.my_punctuation))
 
   def make_downcase(self, text):
     return text.lower()
 
   def prepare_not_self_text(self, text):
+      text = text.replace("`","'")
+      text = self.replace_short_forms(text)
       text = self.remove_punctuation(text)
       text = self.make_downcase(text)
 
@@ -30,6 +47,8 @@ class Tokenizer:
     return word_tokenize(text, language=self.lang)
 
   def tokenize_sent(self, text):
+    text = text.replace("`","'")
+    text = self.replace_short_forms(text)
     st = sent_tokenize(text, language=self.lang)
     sentences = []
     for s in st:
@@ -51,13 +70,15 @@ class Tokenizer:
     ngrams_res = []
     for ts in tokens_sent:
       n_words = len(self.tokenize_word(ts, prepare))
+      if END_TOKEN not in ts:
+        n_words += 2
       if prepare:
         ts = self.prepare_not_self_text(ts)
       if n_words < n:
         if end_tag:
           ts_temp = END_TOKEN + " " + ts + " " + END_TOKEN
           ts = ts_temp
-          print("\n\n\nTS: ", ts)
+          #print("\n\n\nTS: ", ts)
           #ts += " " + END_TOKEN
           ngrams_res.append([ts])
           #ngrams_res.append([])
@@ -67,7 +88,7 @@ class Tokenizer:
           ts_temp = END_TOKEN + " " + ts + " " + END_TOKEN
           #ts += END_TOKEN + " " + ts + " " + END_TOKEN
           ts = ts_temp
-          print("\n\n\nTS: ", ts)
+          #print("\n\n\nTS: ", ts)
 
         tokens = [token for token in self.tokenize_word(ts, prepare) if token != ""]
         ngrams = zip(*[tokens[i:] for i in range(n)])

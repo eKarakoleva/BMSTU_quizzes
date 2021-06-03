@@ -17,7 +17,7 @@ from django.db import connection
 #from django.contrib import messages
 #from django import forms
 
-from quizzes.helper import check_grades, generate_code, open_answers_for_check, grammar_answers_for_check, construct_quiz_teacher, construct_quiz_student_results, isfloat
+from quizzes.helper import check_grades, generate_code, open_answers_for_check, grammar_answers_for_check, construct_quiz_teacher, construct_quiz_student_results, isfloat, get_lang_options_for_question
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
 import json
 
@@ -393,7 +393,8 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 	is_actve = questions.get_quiz_status(pk)
 
 	if request.user.id == owner_id and not is_actve:
-		
+		lr = repo.LanguagesRepository(Languages)
+		languages = get_lang_options_for_question(lr, pk)
 		cur_question_points = questions.get_question_points(pk)
 		answers = repo.AnswerRepository(Answers)
 		sum_answers_points, exist = answers.sum_all_question_answers_points_if_exist(pk)
@@ -452,7 +453,7 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 					else:
 						question.qtype = qtype
 						update_status = -1
-						messages.error(request, 'Can not change type of the question to open or compare. There are answers in this question!')
+						#messages.error(request, 'Can not change type of the question to open or compare. There are answers in this question!')
 				
 				if update_type == 'compare':
 					if not exist:
@@ -493,7 +494,6 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 					gramm_update_status = 0
 				else:
 					if update_type == 'grammar' and qtype == 'grammar':
-						lr = repo.LanguagesRepository(Languages)
 						lang_id = lr.get_id_by_abr(request.POST["lang"])
 						if lang_id != -1:
 							gqsr = repo.GrammarQuestionSanctionsRepository(GrammarQuestionSanctions)
@@ -511,7 +511,7 @@ def update_question(request, pk, template_name='teachers/update/update_question.
 					questions.update_is_done(pk, False)
 			
 			return HttpResponse(render_to_string('teachers/update/item_edit_form_success.html'))
-		return render(request, template_name, {'form':form, 'id': pk, 'sum_answers': sum_answers_points, 'mistake_points': grammar_points, 'qtype': qtype})
+		return render(request, template_name, {'form':form, 'id': pk, 'sum_answers': sum_answers_points, 'mistake_points': grammar_points, 'qtype': qtype, 'languages': languages})
 	raise Http404
 
 @method_decorator([login_required, teacher_required], name='dispatch')
@@ -543,7 +543,7 @@ def AnswersView(request, qpk):
 
 	grammar_points = []
 	if question[0].qtype == 'grammar':
-		grammar_points = questions.get_grammar_points(qpk)
+		grammar_points = questions.get_grammar_points(qpk)	
 		
 	if request.user.id == owner_id and qtype != 'open':
 		answersR = repo.AnswerRepository(Answers)
@@ -900,6 +900,7 @@ def test_grammar(request, qpk):
 		sents_to_check = request.GET.get('sents', None)
 		ethalonts = checkerop.get_etalons(qpk)
 		error_struct_result, error_codes, corrected_sent = checkerop.process_checking(ethalonts, sents_to_check, lang)
+		print("\n\n\ncoore: ", corrected_sent)
 
 	data = {
 		'error_result': error_struct_result,

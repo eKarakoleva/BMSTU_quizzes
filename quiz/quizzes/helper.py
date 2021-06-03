@@ -317,3 +317,18 @@ def isfloat(value):
     return True
   except ValueError:
     return False
+
+
+def get_lang_options_for_question(lrepo, question_id):
+	gsr = repo.GrammarQuestionSanctionsRepository(GrammarQuestionSanctions)
+	lang_id_quest = gsr.get_language(question_id)
+	all_lang = lrepo.get_all()
+	lang_struct = dict()
+	for l in all_lang:
+		if l.abr not in lang_struct.keys():
+			lang_struct[l.abr] = False
+			if l.id == lang_id_quest:
+				lang_struct[l.abr] = True
+
+	return lang_struct
+

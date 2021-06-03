@@ -89,7 +89,7 @@ def bi_tags_model(lang, train_set, unique_bigrams, lang_query, learnSet):
          
 
 
-                    
+'''                
 def tri_tags_model(lang, train_set, unique_trigrams, lang_query, learnSet):
     tags_id = dict()
     tagsetRepo = repo.TagsetRepository(Tagset)
@@ -117,7 +117,7 @@ def tri_tags_model(lang, train_set, unique_trigrams, lang_query, learnSet):
                     else:
                         trigramRepo.update_combination_freq(comb_exists[0].id, unique_trigrams[tri])
         
-
+'''   
 
 def train_tags_model(lang, train_set, user_id):
     langRepo = repo.LanguagesRepository(Languages)

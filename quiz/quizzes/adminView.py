@@ -61,6 +61,13 @@ def test(request):
 	lang = request.GET.get('lang', None)
 	tm = TestMethod(lang)
 	tm.read_ethalon_sents_from_file()
+	#tm.test_results('spelling')
+	#tm.test_results('order')
+	#tm.test_results('translate')
+	#tm.test_results('not_ethalon')
+	#tm.test_results('form')
+	#tm.test_results('spelling')
+	tm.test_results('combine')
 	data = {
 		'activated': True
 	}

@@ -194,6 +194,8 @@ def finish_test(request, pk):
 
 	solve_info_id = qsrr.get_solve_info_id(pk, request.user.id)
 	if solve_info_id != 0:
+		grammarChecker_ru = checkerop.GrammarChecker('ru')
+		grammarChecker_en = checkerop.GrammarChecker('en')
 		student_answers = request.POST['data']
 		student_answers = json.loads(student_answers)
 		quiz_data = helper.construct_main(pk)
@@ -203,8 +205,7 @@ def finish_test(request, pk):
 		sar = repo.StudentAnswersRepository(StudentAnswers)
 		soar = repo.StudentOpenAnswersRepository(StudentOpenAnswers)
 		sgar = repo.StudentGrammarAnswersRepository(StudentGrammarAnswers)
-
-		init_grammarChecker_parameters = 1
+		
 		lang_id = -1
 		grammarChecker = -1
 		gqsr = -1
@@ -235,14 +236,22 @@ def finish_test(request, pk):
 								#save answer + compare algorithm = points
 								soar.save_answer(solve_info_id, key, answer, points_compare)
 						if quiz_data[key]['qtype'] == 'grammar':
-							if init_grammarChecker_parameters:
-								gqsr = repo.GrammarQuestionSanctionsRepository(GrammarQuestionSanctions)
-								lang_id = gqsr.get_language(key)
-								if lang_id != -1:
-									langRepo = repo.LanguagesRepository(Languages)
-									lang = langRepo.get_abr_by_id(lang_id)
+							gqsr = repo.GrammarQuestionSanctionsRepository(GrammarQuestionSanctions)
+							lang_id = gqsr.get_language(key)
+							if lang_id != -1:
+								langRepo = repo.LanguagesRepository(Languages)
+								lang = langRepo.get_abr_by_id(lang_id)
+								'''
+								if grammarChecker != -1:
+									if grammarChecker.lang != lang:
+										grammarChecker = checkerop.GrammarChecker(lang)
+								else:						
 									grammarChecker = checkerop.GrammarChecker(lang)
-									init_grammarChecker_parameters = 0
+								'''
+								if lang == 'ru':
+									grammarChecker = grammarChecker_ru
+								else:
+									grammarChecker = grammarChecker_en
 							if lang_id != -1 and grammarChecker != -1 and gqsr != -1:
 								question_sanctions = gqsr.form_error_sanction_dict(key)
 								struct, corrected_sents, points_gra = helper.check_student_grammar_answer(key, str(answer), question_sanctions, grammarChecker)

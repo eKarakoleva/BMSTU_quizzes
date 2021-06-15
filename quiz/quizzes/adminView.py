@@ -1,6 +1,7 @@
 import quizzes.repositories as repo
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from quizzes.decorators import admin_required
 
 from .grammar.Trainer import train_packet
 from .grammar.lang_abr import languages
@@ -11,12 +12,14 @@ from quizzes.grammar.TestMethod import TestMethod
 
 test_list = []
 @login_required
+@admin_required
 def train_page(request):
 	avo.fill_languages()
 	avo.fill_LearnSets()
 	return render(request, 'grammar/train_page.html', {'langs': languages, 'packs': train_packet})
 
 @login_required
+@admin_required
 def train(request):
 	lang = request.GET.get('lang', None)
 	packet = request.GET.get('packet', None)
@@ -45,6 +48,7 @@ def train(request):
 
 
 @login_required
+@admin_required
 def get_progress(request):
 	process, corpus = avo.get_progress(request.user.id)		
 	data = {
@@ -54,12 +58,14 @@ def get_progress(request):
 	return JsonResponse(data)
 
 @login_required
+@admin_required
 def test_page(request):
 	test_list = ['spelling', 'order', 'translate', 'not_ethalon', 'form', 'combine']
 	return render(request, 'grammar/test_page.html', {'langs': languages, 'test_list': test_list})
 
 
 @login_required
+@admin_required
 def test(request):
 	lang = request.GET.get('lang', None)
 	test_list = ['spelling', 'order', 'translate', 'not_ethalon', 'form', 'combine']

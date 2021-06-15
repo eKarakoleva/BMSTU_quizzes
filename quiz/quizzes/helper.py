@@ -198,7 +198,13 @@ def grammar_answers_for_check(quiz_id, stud_id):
 			if not student_answer:
 				gq['exist'] = False
 			else:
+				
 				sanctions = gqsr.form_error_sanction_dict_error_names(gq['id'])
+				ethalonts = checkerop.get_etalons(gq['id'])
+				
+				ethalon = ""
+				for eth in ethalonts:
+					ethalon += eth['name'] + ". "
 				gq['checked_result'] = json.loads(student_answer[0]['check_result'])
 				#gq['points'] = gq[0]['points']
 				gq['exist'] = True
@@ -206,6 +212,8 @@ def grammar_answers_for_check(quiz_id, stud_id):
 				gq['corrected_sent'] = student_answer[0]['corrected_sent']
 				gq['suggested_points'] = student_answer[0]['points']
 				gq['sanctions'] = sanctions
+				gq['ethalons'] = ethalon
+				print(ethalon)
 	return grammar_questions
 
 def prepare_string(str1, str2):
@@ -278,12 +286,14 @@ def check_student_grammar_answer(question_id, stud_answer, question_sanctions, g
 	error_struct_result, _ , corrected_sent = grammarChecker.process_checking(ethalonts, stud_answer)
 	points_sanctions = calculate_grammar_question_points(error_struct_result, question_sanctions)
 	qr = repo.QuestionRepository(Questions)
-	print("\n\n\nSANCTIONS: ", points_sanctions)
+	#print("\n\n\nSANCTIONS: ", points_sanctions)
 	question_points = qr.get_question_points(question_id)
 	points_for_question = question_points - points_sanctions
 	if points_for_question < 0:
 		points_for_question = 0
+	points_for_question = round(points_for_question, 2)
 	error_struct_result = json.dumps(error_struct_result)
+	#print("nSANCTIONS", corrected_sent)
 	return error_struct_result, corrected_sent, points_for_question
 
 def calculate_grammar_question_points(struct, question_sanctions):
@@ -301,7 +311,9 @@ def calculate_grammar_question_points(struct, question_sanctions):
 					if checkerop.WORD_FORM_MISTAKE in struct[sent_i][word_i]['error'] and checkerop.NOT_IN_ETHALON in struct[sent_i][word_i]['error']:
 						mistakes_count[checkerop.NOT_IN_ETHALON] -= 1
 
-	double_errors = [checkerop.WRONG_ORDER, checkerop.TRANSLATION_MISTAKE,checkerop.NOT_IN_ETHALON,checkerop.GRAMMAR_MISTAKE,checkerop.WORD_FORM_MISTAKE]
+	if mistakes_count[checkerop.NOT_IN_ETHALON] < 0:
+		mistakes_count[checkerop.NOT_IN_ETHALON] = 2*mistakes_count[checkerop.WORD_FORM_MISTAKE]
+	double_errors = [checkerop.WRONG_ORDER, checkerop.TRANSLATION_MISTAKE,checkerop.NOT_IN_ETHALON,checkerop.GRAMMAR_MISTAKE]
 	for key in mistakes_count.keys():
 		if key in double_errors:
 			if mistakes_count[key] > 1:
@@ -310,6 +322,7 @@ def calculate_grammar_question_points(struct, question_sanctions):
 				else:
 					mistakes_count[key] -= 1
 		points_sanctions += mistakes_count[key] * question_sanctions[key]
+		#print(mistakes_count)
 	return points_sanctions
 
 

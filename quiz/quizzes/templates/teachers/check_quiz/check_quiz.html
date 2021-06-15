@@ -44,8 +44,7 @@
                 <br>
             </div>
       {% endfor %}
-      </ol>
-      <ol>
+   
         {% for answer in answers_grammar %}
           
             <li style="font-size:19px"> <h3> {{answer.name}}</h3> </li>
@@ -56,7 +55,7 @@
                           <label for="stud_answer">Student's answer</label>
                           <textarea class="form-control" rows="3" disabled>{{answer.stud_answer}}</textarea>
                           <p><b>{% for code, mistake in  error_codes.items %}{{code}}:{{mistake}}   {% endfor %}</b></p>
-                         
+                          <p> {{ answer.ethalons }}</p>
                           <div style="overflow-x:auto;">
                             <table id = "grammar-result" class="table">
                               {% for sent, sent_info in answer.checked_result.items%}

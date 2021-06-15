@@ -278,6 +278,7 @@ def check_student_grammar_answer(question_id, stud_answer, question_sanctions, g
 	error_struct_result, _ , corrected_sent = grammarChecker.process_checking(ethalonts, stud_answer)
 	points_sanctions = calculate_grammar_question_points(error_struct_result, question_sanctions)
 	qr = repo.QuestionRepository(Questions)
+	print("\n\n\nSANCTIONS: ", points_sanctions)
 	question_points = qr.get_question_points(question_id)
 	points_for_question = question_points - points_sanctions
 	if points_for_question < 0:
@@ -297,6 +298,8 @@ def calculate_grammar_question_points(struct, question_sanctions):
 			for error in struct[sent_i][word_i]['error']:
 				if error in mistakes_count.keys():
 					mistakes_count[error] += 1
+					if checkerop.WORD_FORM_MISTAKE in struct[sent_i][word_i]['error'] and checkerop.NOT_IN_ETHALON in struct[sent_i][word_i]['error']:
+						mistakes_count[checkerop.NOT_IN_ETHALON] -= 1
 
 	double_errors = [checkerop.WRONG_ORDER, checkerop.TRANSLATION_MISTAKE,checkerop.NOT_IN_ETHALON,checkerop.GRAMMAR_MISTAKE,checkerop.WORD_FORM_MISTAKE]
 	for key in mistakes_count.keys():

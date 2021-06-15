@@ -9,6 +9,7 @@ from quizzes.models import Languages, Tagset
 from django.http import JsonResponse
 from quizzes.grammar.TestMethod import TestMethod
 
+test_list = []
 @login_required
 def train_page(request):
 	avo.fill_languages()
@@ -54,20 +55,25 @@ def get_progress(request):
 
 @login_required
 def test_page(request):
-	return render(request, 'grammar/test_page.html', {'langs': languages})
+	test_list = ['spelling', 'order', 'translate', 'not_ethalon', 'form', 'combine']
+	return render(request, 'grammar/test_page.html', {'langs': languages, 'test_list': test_list})
+
 
 @login_required
 def test(request):
 	lang = request.GET.get('lang', None)
-	tm = TestMethod(lang)
-	tm.read_ethalon_sents_from_file()
-	#tm.test_results('spelling')
-	#tm.test_results('order')
-	#tm.test_results('translate')
-	#tm.test_results('not_ethalon')
-	#tm.test_results('form')
-	#tm.test_results('spelling')
-	tm.test_results('combine')
+	test_list = ['spelling', 'order', 'translate', 'not_ethalon', 'form', 'combine']
+	test_set = request.GET.get('test_set', None)
+	if test_set in test_list:
+		tm = TestMethod(lang)
+		tm.read_ethalon_sents_from_file()
+		tm.test_results(test_set)
+		#tm.test_results('spelling')
+		#tm.test_results('order')
+		#tm.test_results('translate')
+		#tm.test_results('not_ethalon')
+		#tm.test_results('form')
+		#tm.test_results('combine')
 	data = {
 		'activated': True
 	}

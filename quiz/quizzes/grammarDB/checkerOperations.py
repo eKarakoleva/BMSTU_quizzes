@@ -41,7 +41,7 @@ WORD_FORM_MISTAKE = -6
 WORD_WITH_NO_MISTAKE = -7
 ALREADY_FIXED_WORD = -8
 
-
+'''
 error_explain = {
     SPELLING_MISTAKE: "Spelling mistake",
     WRONG_ORDER: "Wrong order or need to be deleted",
@@ -49,6 +49,15 @@ error_explain = {
     NOT_IN_ETHALON: "Not in the ethalon",
     GRAMMAR_MISTAKE: "Grammar mistake",
     WORD_FORM_MISTAKE: "Word form mistake or wrong verb",
+}
+'''
+error_explain = {
+    SPELLING_MISTAKE: "Орфографическая ошибка",
+    WRONG_ORDER: "Неправильный порядок слов или нужно удаление",
+    TRANSLATION_MISTAKE: "Ошибка в переводе",
+    NOT_IN_ETHALON: "Конструкция или слово не присуствует в эталоне",
+    GRAMMAR_MISTAKE: "Грамматическая ошибка",
+    WORD_FORM_MISTAKE: "Ошибка в форме слова или неправилыный глагол",
 }
 
 short_forms = {
@@ -158,6 +167,7 @@ class GrammarChecker:
         return word_pos
 
     def get_words_pos_main_form(self, sent):
+        #sent = self.tokenizer.prepare_not_self_text(sent)
         tags = self.posTagger.tag(sent)
         word_pos = dict()
         main_form = dict()
@@ -227,7 +237,8 @@ class GrammarChecker:
                                             if WORD_FORM_MISTAKE in self.word_error_struct[sent_counter][bi_gram_counter]['error']:
                                                 possible_words_next = {self.word_error_struct[sent_counter][bi_gram_counter]['new'] : WORD_FORM_MISTAKE} 
                                             else:   
-                                               possible_words_next = {self.word_error_struct[sent_counter][bi_gram_counter]['new'] : SPELLING_MISTAKE} #alredy fixed word
+                                               #possible_words_next = {self.word_error_struct[sent_counter][bi_gram_counter]['new'] : SPELLING_MISTAKE} #alredy fixed word
+                                               posible_words, possible_words_next = self.get_possible_correction_words(bi_gramm_words[i], bi_gramm_words[i + 1], main_forms_checking_sent)
                                         else:
                                             print("FIXED>2 ")
                                             not_word_form_mistake = 1
@@ -235,7 +246,7 @@ class GrammarChecker:
                                                 if not self.word_error_struct[sent_counter][bi_gram_counter]['new']:
                                                     possible_words_next = {self.word_error_struct[sent_counter][bi_gram_counter]['word'] : WORD_FORM_MISTAKE} 
                                                     not_word_form_mistake = 0
-     
+    
                                             if not_word_form_mistake:
                                                 print("FIXED>3 ")
                                                 if TRANSLATION_MISTAKE in self.word_error_struct[sent_counter][bi_gram_counter]['error']:
@@ -490,10 +501,12 @@ class GrammarChecker:
                     
                     print("ERROR TYPE2: ", error_type, next_word)
                     self.update_temp_error_struct(pwn, new_second_word, error_type, temp_error_struct)
-                    
+                if error_type == WORD_WITH_NO_MISTAKE:
+                    break 
+                  
 
             print("\n\n\nAFTER_BREAK: ", temp_error_struct)       
-            if temp_error_struct['error_type'] != 'NONE':
+            if temp_error_struct['error_type'] != 'NONE' and error_type != WORD_WITH_NO_MISTAKE and error_type != WORD_WITH_NO_MISTAKE:
                 error_t = temp_error_struct['error_type']
                 if error_t == SPELLING_AND_ORDER or error_t == SPELLING_MISTAKE or error_t == WORD_FORM_MISTAKE:
                     self.update_words_struct(sent_count, bi_word_count, temp_error_struct['first_word'], temp_error_struct['second_word'], error_t)
@@ -514,7 +527,8 @@ class GrammarChecker:
                             self.append_if_not_exist(self.word_error_struct[sent_count][bi_word_count + 1]['error'], error_t)
                        # else:
                             #self.append_if_not_exist(self.word_error_struct[sent_count][bi_word_count + 1]['error'], error_t)
-            if self.word_error_struct[sent_count][bi_word_count]['word'] != END_TOKEN and self.word_error_struct[sent_count][bi_word_count + 1]['word'] != END_TOKEN:
+                error_type = error_t
+            if error_type != WORD_WITH_NO_MISTAKE and error_type != SPELLING_MISTAKE and self.word_error_struct[sent_count][bi_word_count]['word'] != END_TOKEN and self.word_error_struct[sent_count][bi_word_count + 1]['word'] != END_TOKEN:
                 if WORD_FORM_MISTAKE not in self.word_error_struct[sent_count][bi_word_count]['error'] and WORD_FORM_MISTAKE not in self.word_error_struct[sent_count][bi_word_count + 1]['error']:
                     corrected_sent = self.join_sent(tokenized_sent)
                     print("corrected_sent: " , tokenized_sent)
@@ -593,13 +607,15 @@ class GrammarChecker:
             else:
                 corrected_sent = self.join_sent(tokenized_sent)
                 tag = self.get_word_pos(corrected_sent)
-                pos_bi_gramm = self.build_new_pos_bi_gram(tag, first_word, second_word)
+                pos_bi_gramm = self.build_new_pos_bi_gram(tag, first_word, second_word, sent_count, bi_word_count)
                 print("ELSE: ", pos_bi_gramm, self.bi_pos_ethalon)
             
                 if word_correct !=  WORD_FORM_MISTAKE:
                     if first_word_is_correct != NOT_IN_ETHALON:
                         print("\nSPELLING + WRONG_ORDER0: ", pos_bi_gramm, first_word, second_word)
                         word_correct = SPELLING_AND_ORDER
+                        if TRANSLATION_MISTAKE in self.word_error_struct[sent_count][bi_word_count]['error']:
+                            word_correct = SPELLING_MISTAKE
                     else:
                         print("\nNOT ETHALON1: ", pos_bi_gramm, first_word, second_word)
                         word_correct = NOT_IN_ETHALON 
@@ -620,12 +636,13 @@ class GrammarChecker:
                                 word_correct = TRANSLATION_MISTAKE
                         else:
                             word_correct = NOT_IN_ETHALON                    
-
+                
                 self.update_temp_error_struct(first_word, second_word, word_correct, temp_error_struct)
 
             if possible_words[second_word] >= 0.81:
                 break
-                
+            
+            temp_error_struct['error_type'] = 'NONE'
             error_type = self.check_pos_grammar(sent_count, bi_word_count,first_word, second_word_, tokenized_sent, temp_error_struct, word_correct)
 
         if len(possible_words) == 0:  #no possible words to change with
@@ -688,14 +705,15 @@ class GrammarChecker:
             print("\n SENT: ", tokenized_sent)
             print("\n TAG: ", tag)
             
-            pos_bi_gramm = self.build_new_pos_bi_gram(tag, first_word, second_word)
+            pos_bi_gramm = self.build_new_pos_bi_gram(tag, first_word, second_word, sent_count, bi_word_count)
                 
             if pos_bi_gramm in self.bi_pos_ethalon:
                 print("ALL_Coo: ", first_word, second_word, pos_bi_gramm, word_correct)
                 print("POS ETHALON: ", self.bi_pos_ethalon)
                 if word_correct == WORD_WITH_NO_MISTAKE:
                     print("\nWRONG ORDER1: ", new_bi_gramm)
-                    error_type = WRONG_ORDER
+                    if TRANSLATION_MISTAKE not in self.word_error_struct[sent_count][bi_word_count]['error']:
+                        error_type = WRONG_ORDER
                 if word_correct == SPELLING_MISTAKE:
                     print("\nSPELLING + WRONG_ORDER1: ", new_bi_gramm)
                     error_type = SPELLING_AND_ORDER
@@ -711,15 +729,19 @@ class GrammarChecker:
                 if (word_correct == NOT_IN_ETHALON or word_correct == TRANSLATION_MISTAKE) and second_word != END_TOKEN:
                     print("\nnTRANSLATION_WORD: ",error_type, new_bi_gramm, tag[first_word] , tag[second_word], self.bi_pos_ethalon)
                     #get possible translation
+                   
                     if word_correct == TRANSLATION_MISTAKE:
                         if first_word not in self.words_main_ethalon.keys() and second_word in self.words_main_ethalon.keys():
                             error_type = TRANSLATION_MISTAKE 
                     else:
+                        if NOT_IN_ETHALON in self.word_error_struct[sent_count][bi_word_count]['error'] and WORD_FORM_MISTAKE not in self.word_error_struct[sent_count][bi_word_count]['error']:
+                            error_type = NOT_IN_ETHALON
                         if tag[first_word].startswith("V") or tag[second_word].startswith("V") or tag[first_word] == 'MD' or tag[second_word] == 'MD':
                             print("\nFORS_SEC: ", first_word, second_word, self.word_error_struct[sent_count][bi_word_count]['word'],  self.word_error_struct[sent_count][bi_word_count + 1]['word'])
-                            if tag[first_word].startswith("V") or tag[second_word] == 'MD' and first_word not in self.words_main_ethalon.keys():
+                            if (tag[first_word].startswith("V") or tag[second_word] == 'MD') and first_word not in self.words_main_ethalon.keys():
                                 error_type = WORD_FORM_MISTAKE
-                            if tag[second_word].startswith("V") or tag[second_word] == 'MD' and second_word not in self.words_main_ethalon.keys():
+                            print("\nFORS_SEC2: ", second_word, self.words_main_ethalon.keys())
+                            if (tag[second_word].startswith("V") or tag[second_word] == 'MD') and second_word not in self.words_main_ethalon.keys():
                                 error_type = WORD_FORM_MISTAKE
                                 if tag[second_word] == 'MD':
                                     error_type = NOT_IN_ETHALON
@@ -729,17 +751,41 @@ class GrammarChecker:
                         else:
                             print("AA1")
                             error_type = TRANSLATION_MISTAKE
-                    '''
+                    
                     if first_word not in self.words_main_ethalon.keys() and error_type == TRANSLATION_MISTAKE:
                         if bi_word_count - 2 in self.word_error_struct[sent_count].keys():
-                            if NOT_IN_ETHALON in  self.word_error_struct[sent_count][bi_word_count]['error']:
+
+                            if NOT_IN_ETHALON in  self.word_error_struct[sent_count][bi_word_count]['error'] and WORD_FORM_MISTAKE not in self.word_error_struct[sent_count][bi_word_count]['error']:
                                 if NOT_IN_ETHALON in self.word_error_struct[sent_count][bi_word_count - 1]['error'] and NOT_IN_ETHALON not in self.word_error_struct[sent_count][bi_word_count - 2]['error']:
-                                    self.word_error_struct[sent_count][bi_word_count - 1]['error'].remove(NOT_IN_ETHALON)
-                                    self.word_error_struct[sent_count][bi_word_count]['error'].remove(NOT_IN_ETHALON)
-                                    self.append_if_not_exist(self.word_error_struct[sent_count][bi_word_count - 1]['error'], TRANSLATION_MISTAKE)
-                    '''
-                    if NOT_IN_ETHALON in self.word_error_struct[sent_count][bi_word_count]['error'] and WORD_FORM_MISTAKE not in self.word_error_struct[sent_count][bi_word_count]['error']:
-                        error_type = NOT_IN_ETHALON
+                                    if not self.word_error_struct[sent_count][bi_word_count - 1]['new']:
+                                        first_word = self.word_error_struct[sent_count][bi_word_count - 1]['word']
+                                    else:
+                                        first_word = self.word_error_struct[sent_count][bi_word_count - 1]['new']
+                                    if not self.word_error_struct[sent_count][bi_word_count]['new']:
+                                        second_word = self.word_error_struct[sent_count][bi_word_count]['word']
+                                    else:
+                                        second_word = self.word_error_struct[sent_count][bi_word_count]['new']
+                                    temp_tokenized_sent = tokenized_sent
+                                    temp_tokenized_sent[bi_word_count - 1] = first_word
+                                    temp_tokenized_sent[bi_word_count] = second_word
+                                    corrected_sent_temp = self.join_sent(temp_tokenized_sent)
+
+                                    tag_temp = self.get_word_pos(corrected_sent_temp)
+                                    pos_bi_gramm_temp = self.build_new_pos_bi_gram(tag_temp, first_word, second_word, sent_count, bi_word_count)
+                                    print("DELETE_-4: " , pos_bi_gramm_temp, first_word, second_word)
+                                    if pos_bi_gramm_temp in self.bi_pos_ethalon:
+                                        self.word_error_struct[sent_count][bi_word_count - 1]['error'].remove(NOT_IN_ETHALON)
+                                        self.word_error_struct[sent_count][bi_word_count]['error'].remove(NOT_IN_ETHALON)
+                                        self.append_if_not_exist(self.word_error_struct[sent_count][bi_word_count - 1]['error'], TRANSLATION_MISTAKE)
+                                    else:
+                                        if first_word in self.words_main_ethalon.keys():
+                                            self.word_error_struct[sent_count][bi_word_count - 1]['error'].remove(NOT_IN_ETHALON)
+                                            self.word_error_struct[sent_count][bi_word_count]['error'].remove(NOT_IN_ETHALON)
+                                            self.append_if_not_exist(self.word_error_struct[sent_count][bi_word_count]['error'], WRONG_ORDER)
+                                            self.append_if_not_exist(self.word_error_struct[sent_count][bi_word_count - 1]['error'], WRONG_ORDER)
+
+                    
+
 
             else:
                 print("ALL_Coo22: ", first_word, second_word, pos_bi_gramm, word_correct, self.bi_pos_ethalon)
@@ -754,6 +800,7 @@ class GrammarChecker:
                         if (tag[second_word].startswith("V") or tag[second_word] == 'MD') and first_word not in self.words_main_ethalon.keys():
                             print("PROBABLY_TRANSLATE (NOT_IN_ETHALON) 2", tag[second_word], first_word)
                             error_type = NOT_IN_ETHALON
+                            
                         else:
                             print("PROBABLY_TRANSLATE (NOT_IN_ETHALON) 3", tag[second_word], first_word)
                             if NOT_IN_ETHALON not in self.word_error_struct[sent_count][bi_word_count]['error'] and NOT_IN_ETHALON not in self.word_error_struct[sent_count][bi_word_count + 1]['error']:
@@ -798,7 +845,8 @@ class GrammarChecker:
                                 else:
                                     error_type = SPELLING_AND_ORDER
                         else:
-                            print("\n WRONG_ORDER3: ", new_bi_gramm, pos_bi_gramm)
+                            print("\n WRONG_ORDER3: ", new_bi_gramm, pos_bi_gramm,)
+                            print("\n", self.pos_ethalon)
                             if word_correct == WORD_FORM_MISTAKE and second_word != END_TOKEN:
                                 ethalon_pos = self.check_if_word_tag_from_ethalon(second_word)
                                 print("\n WRONG_ORDER31: ", second_word, tag[second_word], ethalon_pos)
@@ -807,8 +855,12 @@ class GrammarChecker:
                                 else:
                                     print("\n WRONG_ORDER32: ", second_word, tag[second_word], ethalon_pos)
                                     if second_word in self.words_main_ethalon.keys():
-                                        self.append_if_not_exist(self.word_error_struct[sent_count][bi_word_count]['error'], WRONG_ORDER)
-                                        self.append_if_not_exist(self.word_error_struct[sent_count][bi_word_count + 1]['error'], WRONG_ORDER)
+                                        ethalon_pos_first = self.check_if_word_tag_from_ethalon(first_word)
+                                        if ethalon_pos_first == 'NNNN':
+                                            ethalon_pos_first = tag[first_word]
+                                        if ethalon_pos_first in self.pos_ethalon.values():
+                                            self.append_if_not_exist(self.word_error_struct[sent_count][bi_word_count]['error'], WRONG_ORDER)
+                                            self.append_if_not_exist(self.word_error_struct[sent_count][bi_word_count + 1]['error'], WRONG_ORDER)
                                     error_type = NOT_IN_ETHALON
                             else:
                                 if tag[first_word].startswith("V") or tag[first_word] == 'MD' and second_word != END_TOKEN:
@@ -879,13 +931,16 @@ class GrammarChecker:
     def word_possible_root_precess(self, ethalon_word, cur_word, word_next_arr, words_arr):
         ratio = self.levenshtein_ratio_and_distance(ethalon_word, cur_word, ratio_calc = True)
         print("RATIO: ", ratio)
+        roots_change = 0
         if ratio < 0.75:
             root_cur =  self.rootFinder.stem(cur_word)
             root_eth =  self.rootFinder.stem(ethalon_word)
+            print("ROOTS: ", root_cur, root_eth, ratio)
             if len(root_cur) > len(root_eth):
                 new_root = root_cur[:len(root_cur) - (len(root_cur) - len(root_eth))]
                 if len(new_root) >= 3:
                     root_cur = new_root
+                    roots_change = 1
             ratio_root = self.levenshtein_ratio_and_distance(root_cur, root_eth, ratio_calc = True)
             print("HERERERE_RATIO: ", ratio_root, root_cur, root_eth, ratio)
             if ratio_root >= 0.75 and ratio > 0.5:
@@ -912,24 +967,26 @@ class GrammarChecker:
                         for tag_info in tags:
                             tag = tag_info.split(" ")
                             _tag = tag[0].split()
-                            root_cur =  self.rootFinder.stem(cur_word)
-                            root_eth =  self.rootFinder.stem(ethalon_word)
-                            ratio_root_temp = self.levenshtein_ratio_and_distance(root_cur, root_eth, ratio_calc = True)
+                            if not roots_change:
+                                root_cur =  self.rootFinder.stem(cur_word)
+                                root_eth =  self.rootFinder.stem(ethalon_word)
+                                ratio_root_temp = self.levenshtein_ratio_and_distance(root_cur, root_eth, ratio_calc = True)
                             print("COMPARE POS: ", self.pos_ethalon[ethalon_word], _tag[1])
-                            if not _tag[1].startswith("V") and _tag[1] != 'MD' and ratio_root_temp > 0.60 and ratio > 0.65 and len(cur_word) > 2:
+                            if not _tag[1].startswith("V") and _tag[1] != 'MD' and ratio_root_temp >= 0.60 and ratio > 0.65 and len(cur_word) > 2:
                                 word_next_arr.update({ethalon_word:ratio})
                 else:
                     tags = self.posTagger.tag(cur_word)
                     for tag_info in tags:
                         tag = tag_info.split(" ")
                         _tag = tag[0].split()
-                        root_cur =  self.rootFinder.stem(cur_word)
-                        root_eth =  self.rootFinder.stem(ethalon_word)
-                        ratio_root_temp = self.levenshtein_ratio_and_distance(root_cur, root_eth, ratio_calc = True)
-                        print("COMPARE POS1: ", self.pos_ethalon[ethalon_word], _tag[1])
-                        if not _tag[1].startswith("V") and _tag[1] != 'MD' and ratio_root_temp > 0.65 and ratio > 0.65 and len(cur_word) > 2:
+                        if not roots_change:
+                            root_cur =  self.rootFinder.stem(cur_word)
+                            root_eth =  self.rootFinder.stem(ethalon_word)
+                            ratio_root = self.levenshtein_ratio_and_distance(root_cur, root_eth, ratio_calc = True)
+                        print("COMPARE POS1: ", self.pos_ethalon[ethalon_word], _tag[1], ratio_root, ratio, root_cur, root_eth)
+                        if not _tag[1].startswith("V") and _tag[1] != 'MD' and ratio_root >= 0.60 and ratio > 0.65 and len(cur_word) > 2:
                             word_next_arr.update({ethalon_word:ratio})
-
+                            print("IN")
 
                                     
         if ratio >= 0.75:
@@ -1051,7 +1108,7 @@ class GrammarChecker:
 
     def update_temp_error_struct(self, first_word, second_word, error_type, temp_error_struct):
         print("TEMP_struct_IN: ", temp_error_struct)
-        if temp_error_struct['first_word'] == 'NONE' or error_type == WORD_FORM_MISTAKE or error_type == GRAMMAR_MISTAKE:
+        if temp_error_struct['error_type'] == 'NONE' or error_type == WORD_FORM_MISTAKE or error_type == GRAMMAR_MISTAKE:
             temp_error_struct['first_word'] = first_word
             temp_error_struct['second_word'] = second_word
             temp_error_struct['error_type'] = error_type
@@ -1134,7 +1191,7 @@ class GrammarChecker:
             return distance[row][col]
 
     def check_if_word_tag_from_ethalon(self, check_word):
-        ethalon_pos = "NN"
+        ethalon_pos = "NNNN"
         for key in self.pos_ethalon.keys():
             print("KEY: ", key, check_word)
             if check_word == key:
@@ -1172,8 +1229,14 @@ class GrammarChecker:
                     sent += " " + word
         return sent
 
-    def build_new_pos_bi_gram(self, tag, first_word, second_word):
+    def build_new_pos_bi_gram(self, tag, first_word, second_word, sent_count, bi_word_count):
         pos_bi_gramm = ""
+        ethalon_pos_first = self.check_if_word_tag_from_ethalon(first_word)
+        ethalon_pos_second = self.check_if_word_tag_from_ethalon(second_word)
+        if ethalon_pos_first != 'NNNN' and WORD_FORM_MISTAKE not in self.word_error_struct[sent_count][bi_word_count]['error']:
+            tag[first_word] = ethalon_pos_first
+        if ethalon_pos_second != 'NNNN'and WORD_FORM_MISTAKE not in self.word_error_struct[sent_count][bi_word_count+1]['error']:
+            tag[second_word] = ethalon_pos_second
         if second_word == END_TOKEN:
             pos_bi_gramm = tag[first_word] + " " + END_TOKEN
         else:
@@ -1199,6 +1262,7 @@ class GrammarChecker:
         self.bi_pos_ethalon = dict()
         self.nsubjs_ethalon = []
         self.auxs_ethalon = []
+        self.pos_ethalon = dict()
         self.word_error_struct = dict()
 
 

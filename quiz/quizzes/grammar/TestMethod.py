@@ -27,7 +27,7 @@ class TestMethod:
     def read_ethalon_sents_from_file(self):
         file_path = self.path + "\\" + str(self.lang) + "_ethalons.txt"
         if os.path.isfile(file_path):
-            with open(file_path) as f:
+            with open(file_path,  encoding="utf8") as f:
                 sent_count = 0
                 for line in f:
                     ethalon_dict = dict()
@@ -45,7 +45,7 @@ class TestMethod:
         ethalon_dict = dict()
         if os.path.isfile(file_path):
             ethalon_dict = self.ethalon_template.copy()
-            with open(file_path) as fp:
+            with open(file_path, encoding="utf8") as fp:
                 Lines = fp.readlines()
                 sent_count = 0
                 for line in Lines:

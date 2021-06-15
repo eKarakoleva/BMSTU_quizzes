@@ -28,7 +28,7 @@
 .cut-text{
   display: block;
   white-space: nowrap;
-  width: 10em;
+  width: 30em;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;

@@ -47,12 +47,14 @@
                         $(this).removeData('bs.modal');
                     });
                 });
-
-                var question_points = parseFloat($('#question_points').attr('name'))
-                var total_answer_points = parseFloat($(".total").text())
-                var cur_points = parseFloat($('#id_points').attr('value'))
-                var aval_points = question_points - total_answer_points + cur_points
-                $('#explain_points').text('Points avaliable: ' + aval_points.toFixed(1))
+                
+                if ($('#answer_form').attr('qtype') != 'grammar'){
+                    var question_points = parseFloat($('#question_points').attr('name'))
+                    var total_answer_points = parseFloat($(".total").text())
+                    var cur_points = parseFloat($('#id_points').attr('value'))
+                    var aval_points = question_points - total_answer_points + cur_points
+                    $('#explain_points').text('Points avaliable: ' + aval_points.toFixed(1))
+                }
 
             });
         </script>

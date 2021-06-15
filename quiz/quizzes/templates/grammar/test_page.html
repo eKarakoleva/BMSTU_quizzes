@@ -14,7 +14,7 @@
                 <tr>
                     <th>Operation</th>
                     <th>Language</th>
-                    <th></th>
+                    <th>Test set</th>
                 </tr>
             </thead>
             <tbody>
@@ -22,8 +22,20 @@
 					<tr id="{{ l }}-tag">
 						<td class="align-middle"><a class="btn btn-success test-lang" lang = '{{ l }}' >Test</a></td>
 						<td class="align-middle">{{ l }}</td>
-					</tr>
+					
+					<td class="align-middle">
+						<div class="col-md-7">
+							<select id="{{ l }}-test-drop" class="form-control">
+							  <option selected>Choose...</option>
+							  {% for set in test_list %}
+								<option>{{set}}</option>
+							  {% endfor %}
+							</select>
+						  </div>
+					</td>
+				</tr>
 				{% endfor %}
+
             </tbody>
         </table>
 		<div id = "status" class="container status-bar" style="display: none;">
@@ -56,15 +68,25 @@ $(document).on('keydown', function(e){
 	var myVar = 0
 	$( ".test-lang" ).click(function() {
 		var lang = jQuery(this).attr("lang");
-		$(".tags").remove()
+
+		var test_id = '#' + lang + '-test-drop'
+		var test = $(test_id).find(":selected").text()
+		if (test == 'Choose...') {
+			var test = 'None' 
+		} else {
+			$(".test-lang").hide();
+		}
+		
 		$.ajax({	
 			url: '{% url "test:test" %}',
 			data: {
 				'lang': lang,
+				'test_set': test
 			},
 			dataType: 'json',
 			success: function (data) {
 				console.log(data)
+				$(".test-lang").show();
 			//sleep(15000).then(() => {
 			//	location.reload()
 			//});
@@ -72,6 +94,7 @@ $(document).on('keydown', function(e){
 		});
 	});
 
+	
 
 </script>
 {% endblock javascript %}
